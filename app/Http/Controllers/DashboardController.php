@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function dashboard(Request $request)
     {
         $stats = [
             [
@@ -59,6 +59,6 @@ class DashboardController extends Controller
             ]);
         }
 
-        return view('dashboard.index', compact('stats', 'recentLogs', 'upcomingSchedules'));
+        return view('dashboard', compact('stats', 'recentLogs', 'upcomingSchedules'));
     }
 }

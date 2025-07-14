@@ -13,10 +13,10 @@ class LogController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function goToLogs()
     {
         $logs = Log::all();
-        return view('dashboard.logs', compact('logs'));
+        return view('logs', compact('logs'));
     }
 
     public function export()

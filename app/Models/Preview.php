@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Setting extends Model
+class Preview extends Model
 {
     protected $fillable = [
         'name', 'title', 'size', 'duration', 'cached', 'last_sync', 'status', 'url'

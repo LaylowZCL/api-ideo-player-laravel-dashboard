@@ -1,80 +1,99 @@
-<!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@yield('title', 'VideoScheduler')</title>
+    <meta name="description" content="Dashboard de controle para aplicação de vídeos agendados">
 
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ asset('assets/css/dashboard.css') }}" rel="stylesheet">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    @vite(['resources/js/app.js'])
 
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-
-    <!-- Scripts -->
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    @stack('styles')
 </head>
-<body>
-    <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav me-auto">
-
-                    </ul>
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ms-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }}
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
-                                </div>
-                            </li>
-                        @endguest
-                    </ul>
+<body class="bg-dark text-light">
+    <div class="d-flex min-vh-100">
+        <!-- Sidebar -->
+        <div class="sidebar bg-dark border-end border-secondary" id="sidebar">
+            <div class="p-3 border-bottom border-secondary">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary rounded-2 p-2">
+                        <i class="bi bi-clock text-white fs-6"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-white">VideoScheduler</h6>
+                        <small class="text-muted">Mostrando 6 de 6 registros</small>
+                    </div>
                 </div>
             </div>
-        </nav>
 
-        <main class="py-4">
-            @yield('content')
+            <nav class="flex-fill p-3">
+                <div class="nav-menu">
+                    <a href="{{ route('dashboard') }}" class="nav-btn {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <i class="bi bi-display"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ route('schedule') }}" class="nav-btn {{ request()->routeIs('schedule.index') ? 'active' : '' }}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Agendamentos</span>
+                    </a>
+                    <a href="{{ route('videos') }}" class="nav-btn {{ request()->routeIs('videos') ? 'active' : '' }}">
+                        <i class="bi bi-camera-video"></i>
+                        <span>Vídeos</span>
+                    </a>
+                    <a href="{{ route('preview') }}" class="nav-btn {{ request()->routeIs('preview') ? 'active' : '' }}">
+                        <i class="bi bi-play-circle"></i>
+                        <span>Preview</span>
+                    </a>
+                    <a href="{{ route('logs') }}" class="nav-btn {{ request()->routeIs('logs') ? 'active' : '' }}">
+                        <i class="bi bi-activity"></i>
+                        <span>Logs</span>
+                    </a>
+                    <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
+                        <i class="bi bi-gear"></i>
+                        <span>Configurações</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="p-3 border-top border-secondary">
+                <div class="d-flex align-items-center gap-3 p-3 bg-secondary rounded">
+                    <div class="bg-success rounded-circle" style="width: 8px; height: 8px;"></div>
+                    <div>
+                        <div class="small fw-medium">Sistema Ativo</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Online • 2h 34m</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-fill p-4 overflow-auto">
+
+            <div id="app">  <!-- Must match mount selector -->
+                @yield('content')
+            </div>
         </main>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Custom JS -->
+{{--    <script src="{{ asset('assets/js/app.js') }}"></script>  --}}
+
+    @stack('scripts')
 </body>
 </html>

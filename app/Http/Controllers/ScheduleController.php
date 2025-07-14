@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class ScheduleController extends Controller
 {
@@ -13,67 +14,146 @@ class ScheduleController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function goToSchedule()
     {
         $schedules = Schedule::all();
-        return view('dashboard.schedules', compact('schedules'));
+        return view('schedule', compact('schedules'));
     }
 
+    public function index()
+    {
+        $schedules = Schedule::with('video')->get()->map(function($schedule) {
+            return [
+                'id' => $schedule->id,
+                'title' => $schedule->title,
+                'video' => $schedule->video->name,
+                'time' => $schedule->time,
+                'days' => json_decode($schedule->days),
+                'monitor' => $schedule->monitor,
+                'active' => $schedule->active,
+                'duration' => $schedule->video->duration
+            ];
+        });
+
+        return response()->json($schedules);
+    }
+
+    /**
+     * Cria um novo agendamento
+     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'title' => 'required|string|max:255',
-            'video' => 'required|string|max:255',
-            'time' => 'required',
-            'monitor' => 'required|string|in:Principal,Secundário,Todos',
-            'days' => 'required|array|min:1',
+            'video_id' => 'required|exists:videos,id',
+            'time' => 'required|date_format:H:i',
+            'days' => 'required|array',
             'days.*' => 'in:seg,ter,qua,qui,sex,sab,dom',
-            'active' => 'boolean',
-            'duration' => 'required|string'
+            'monitor' => 'required|in:Principal,Secundário,Todos',
+            'active' => 'boolean'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $schedule = Schedule::create([
+                'title' => $request->title,
+                'video_id' => $request->video_id,
+                'time' => $request->time,
+                'days' => json_encode($request->days),
+                'monitor' => $request->monitor,
+                'active' => $request->active ?? true
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Agendamento criado com sucesso',
+                'schedule' => $schedule
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao criar agendamento: ' . $e->getMessage()
+            ], 500);
         }
-
-        $schedule = Schedule::create([
-            'title' => $request->title,
-            'video' => $request->video,
-            'time' => $request->time,
-            'days' => $request->days,
-            'monitor' => $request->monitor,
-            'active' => $request->active ?? true,
-            'duration' => $request->duration
-        ]);
-
-        return response()->json(['message' => 'Agendamento criado com sucesso', 'schedule' => $schedule], 201);
     }
 
+    /**
+     * Alterna o status de um agendamento
+     */
     public function toggleStatus($id)
     {
         $schedule = Schedule::findOrFail($id);
-        $schedule->active = !$schedule->active;
-        $schedule->save();
 
-        return response()->json(['message' => 'Status alterado com sucesso', 'active' => $schedule->active]);
+        try {
+            $schedule->update([
+                'active' => !$schedule->active
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status do agendamento atualizado',
+                'active' => $schedule->active
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
+    /**
+     * Duplica um agendamento
+     */
     public function duplicate($id)
     {
-        $schedule = Schedule::findOrFail($id);
-        $newSchedule = $schedule->replicate();
-        $newSchedule->title = $schedule->title . ' (Cópia)';
-        $newSchedule->active = false;
-        $newSchedule->save();
+        $original = Schedule::findOrFail($id);
 
-        return response()->json(['message' => 'Agendamento duplicado com sucesso', 'schedule' => $newSchedule]);
+        try {
+            $schedule = Schedule::create([
+                'title' => $original->title . ' (Cópia)',
+                'video_id' => $original->video_id,
+                'time' => $original->time,
+                'days' => $original->days,
+                'monitor' => $original->monitor,
+                'active' => false
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Agendamento duplicado com sucesso',
+                'schedule' => $schedule
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao duplicar agendamento: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
+    /**
+     * Remove um agendamento
+     */
     public function destroy($id)
     {
         $schedule = Schedule::findOrFail($id);
-        $schedule->delete();
 
-        return response()->json(['message' => 'Agendamento removido com sucesso']);
+        try {
+            $schedule->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Agendamento removido com sucesso'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover agendamento: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

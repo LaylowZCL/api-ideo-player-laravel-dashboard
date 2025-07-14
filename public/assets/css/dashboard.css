@@ -62,7 +62,7 @@ body {
 }
 
 .content-section {
-    display: none;
+    /* display: none; */
 }
 
 .content-section.active {

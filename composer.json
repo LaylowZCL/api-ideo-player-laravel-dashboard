@@ -1,8 +1,8 @@
 {
     "name": "laravel/laravel",
     "type": "project",
-    "description": "Video Scheduler Dashboard by Fernando Zucula.",
-    "keywords": ["laravel", "framework", "videoscheduler"],
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
         "php": "^8.1",

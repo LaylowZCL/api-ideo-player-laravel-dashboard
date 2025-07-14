@@ -1,29 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LogController;
-use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\VideoController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SettingController;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Auth::routes();
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
-    Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
-    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
-    Route::get('/logs/export', [LogController::class, 'export'])->name('logs.export');
-    Route::post('/logs/clear', [LogController::class, 'clear'])->name('logs.clear');
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-});
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+Route::get('/videos', [VideoController::class, 'goToVideos'])->name('videos');
+Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->name('schedule');
+Route::get('/logs', [LogController::class, 'goToLogs'])->name('logs');
+Route::get('/preview', [PreviewController::class, 'goToPreview'])->name('preview');
+Route::get('/settings', [SettingController::class, 'goToSettings'])->name('settings');
 
-Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
