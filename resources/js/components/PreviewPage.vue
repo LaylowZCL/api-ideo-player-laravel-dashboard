@@ -50,6 +50,7 @@
                     <div class="position-absolute top-0 start-0 p-2 bg-dark bg-opacity-75 text-light small">
                         {{ currentVideo.title }}
                     </div>
+                    <video @error="handleVideoError"></video>
                 </div>
             </div>
 
@@ -177,13 +178,12 @@ export default {
       popupWidth: 800,
       popupHeight: 600,
       alwaysOnTop: true,
-      autoClose: false,
-      updateInterval: null
+      autoClose: false
     }
   },
   computed: {
     cachedVideos() {
-      return this.videos.filter(v => v.cached);
+      return this.videos.filter(v => v.cached && v.url);
     },
     currentTimeFormatted() {
       const minutes = Math.floor(this.currentTime / 60);
@@ -198,65 +198,9 @@ export default {
     this.clearUpdateInterval();
   },
   methods: {
-    async loadVideos() {
-      try {
-        const response = await axios.get('/api/videos');
-        this.videos = response.data.videos;
-      } catch (error) {
-        console.error('Erro ao carregar vídeos:', error);
-        this.showToast('Erro', 'Falha ao carregar vídeos', 'error');
-      }
-    },
-    selectVideo(video) {
-      this.currentVideo = video;
-      this.isPlaying = false;
-      this.clearUpdateInterval();
-
-      this.$nextTick(() => {
-        const videoElement = this.$refs.videoElement;
-        if (videoElement) {
-          videoElement.volume = this.volume / 100;
-          videoElement.addEventListener('timeupdate', this.updateCurrentTime);
-          videoElement.addEventListener('play', () => this.isPlaying = true);
-          videoElement.addEventListener('pause', () => this.isPlaying = false);
-          videoElement.addEventListener('ended', () => {
-            this.isPlaying = false;
-            if (this.autoClose) {
-              this.stopVideo();
-            }
-          });
-        }
-      });
-    },
-    updateCurrentTime() {
-      const videoElement = this.$refs.videoElement;
-      if (videoElement) {
-        this.currentTime = videoElement.currentTime;
-      }
-    },
-    togglePlayPause() {
-      const video = this.$refs.videoElement;
-      if (!video) return;
-
-      if (this.isPlaying) {
-        video.pause();
-      } else {
-        video.play();
-      }
-    },
-    stopVideo() {
-      const video = this.$refs.videoElement;
-      if (video) {
-        video.pause();
-        video.currentTime = 0;
-        this.isPlaying = false;
-      }
-    },
-    setVolume() {
-      const video = this.$refs.videoElement;
-      if (video) {
-        video.volume = this.volume / 100;
-      }
+    handleVideoError() {
+        console.error('Erro no elemento de vídeo:', this.$refs.videoElement.error);
+        this.showToast('Erro', 'Falha ao carregar o vídeo', 'error');
     },
     toggleFullscreen() {
       const video = this.$refs.videoElement;
@@ -347,6 +291,121 @@ export default {
           }
         });
       }
+    },
+    async loadVideos() {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await axios.get('/api/videos');
+
+        // Verifica se a resposta tem a estrutura esperada
+        if (!response.data || !Array.isArray(response.data.videos)) {
+          throw new Error('Formato de resposta inválido da API');
+        }
+
+        this.videos = response.data.videos.map(video => ({
+          ...video,
+          // Garante que todos os vídeos tenham a propriedade 'cached'
+          cached: video.cached !== undefined ? video.cached : true
+        }));
+
+        console.log('Vídeos carregados:', this.videos);
+
+      } catch (error) {
+        console.error('Erro ao carregar vídeos:', error);
+        this.error = 'Falha ao carregar vídeos. Tente recarregar a página.';
+        this.showToast('Erro', this.error, 'error');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    selectVideo(video) {
+      if (!video.url) {
+        console.error('Vídeo sem URL:', video);
+        this.showToast('Erro', 'Este vídeo não possui uma URL válida', 'error');
+        return;
+      }
+
+      this.currentVideo = video;
+      this.isPlaying = false;
+
+      this.$nextTick(() => {
+        const videoElement = this.$refs.videoElement;
+        if (videoElement) {
+          // Força recarregar o vídeo
+          videoElement.load();
+          videoElement.volume = this.volume / 100;
+
+          // Atualiza o tempo atual
+          videoElement.addEventListener('timeupdate', this.updateCurrentTime);
+
+          // Atualiza o estado de reprodução
+          videoElement.addEventListener('play', () => {
+            this.isPlaying = true;
+          });
+
+          videoElement.addEventListener('pause', () => {
+            this.isPlaying = false;
+          });
+
+          videoElement.addEventListener('ended', () => {
+            this.isPlaying = false;
+            if (this.autoClose) {
+              this.stopVideo();
+            }
+          });
+        }
+      });
+    },
+
+    updateCurrentTime() {
+      const videoElement = this.$refs.videoElement;
+      if (videoElement) {
+        this.currentTime = videoElement.currentTime;
+      }
+    },
+
+    togglePlayPause() {
+      const video = this.$refs.videoElement;
+      if (!video) return;
+
+      if (this.isPlaying) {
+        video.pause();
+      } else {
+        video.play().catch(error => {
+          console.error('Erro ao reproduzir vídeo:', error);
+          this.showToast('Erro', 'Não foi possível reproduzir o vídeo', 'error');
+        });
+      }
+    },
+
+    stopVideo() {
+      const video = this.$refs.videoElement;
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+        this.isPlaying = false;
+      }
+    },
+
+    setVolume() {
+      const video = this.$refs.videoElement;
+      if (video) {
+        video.volume = this.volume / 100;
+      }
+    },
+
+    getVideoMimeType(filename) {
+      const extension = filename.split('.').pop().toLowerCase();
+      switch(extension) {
+        case 'mp4': return 'video/mp4';
+        case 'webm': return 'video/webm';
+        case 'ogg': return 'video/ogg';
+        case 'mov': return 'video/quicktime';
+        default: return 'video/mp4';
+      }
     }
   }
 }
@@ -402,14 +461,14 @@ export default {
 }
 
 .form-range::-webkit-slider-thumb {
-  background: var(--bs-primary);
+    background: var(--bs-primary);
 }
 
 .form-range::-moz-range-thumb {
-  background: var(--bs-primary);
+    background: var(--bs-primary);
 }
 
 .form-range::-ms-thumb {
-  background: var(--bs-primary);
+    background: var(--bs-primary);
 }
 </style>
