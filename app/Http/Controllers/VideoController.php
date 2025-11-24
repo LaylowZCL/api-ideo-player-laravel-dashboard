@@ -5,20 +5,25 @@ namespace App\Http\Controllers;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\URL;
 
 class VideoController extends Controller
 {
+    // private $apiBaseUrl = 'https://dev.fernandozucula.com/api/v1';
+    private $apiBaseUrl = 'http://127.0.0.1:8000/api';
+
     public function __construct()
     {
-       // $this->middleware('auth');
+        // $this->middleware('auth');
     }
 
     public function goToVideos()
     {
         $videos = Video::all();
-        return view('videos', compact('videos'));
+        $appRoute = url('/');
+        return view('videos', compact('videos', 'appRoute'));
     }
 
     public function index(Request $request)
@@ -34,14 +39,18 @@ class VideoController extends Controller
             ->map(function($video) {
                 return [
                     'id' => $video->id,
+                    'api_id' => $video->api_id,
                     'title' => $video->title,
                     'name' => $video->name,
+                    'description' => $video->description,
                     'duration' => $video->duration,
                     'size' => $this->formatSize($video->size),
                     'status' => $video->status,
                     'cached' => $video->cached,
                     'lastSync' => $video->last_sync ? Carbon::parse($video->last_sync)->format('d/m/Y H:i') : null,
-                    'path' => $video->path,
+                    'url' => $video->url,
+                    'thumbnail_url' => $video->thumbnail_url,
+                    'is_active' => $video->is_active,
                 ];
             });
 
@@ -51,22 +60,45 @@ class VideoController extends Controller
         ]);
     }
 
+    /**
+     * Sincroniza vídeos com a API externa
+     */
     public function sync(Request $request)
     {
         try {
-            // Simula tempo de sincronização
-            sleep(2);
+            /*
+            $response = Http::get("{$this->apiBaseUrl}/videos");
+            
+            if (!$response->successful()) {
+                throw new \Exception('Erro ao conectar com a API: ' . $response->status());
+            }
+*/
+            $apiVideos = Video::all();
+            $syncedCount = 0;
 
-            // Atualiza os vídeos no banco de dados
-            $updatedCount = Video::where('status', '!=', 'synced')->update([
-                'status' => 'synced',
-                'last_sync' => now(),
-            ]);
+            foreach ($apiVideos as $apiVideo) {
+                Video::updateOrCreate(
+                    ['api_id' => $apiVideo['id']],
+                    [
+                        'title' => $apiVideo['title'],
+                        'name' => $apiVideo['filename'],
+                        'description' => $apiVideo['description'] ?? null,
+                        'duration' => $apiVideo['duration'] ?? '0:00',
+                        'size' => $apiVideo['size'] ?? 0,
+                        'url' => $apiVideo['url'],
+                        'thumbnail_url' => $apiVideo['thumbnail_url'] ?? null,
+                        'status' => 'available',
+                        'is_active' => $apiVideo['is_active'] ?? true,
+                        'last_sync' => now()
+                    ]
+                );
+                $syncedCount++;
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Sincronização concluída com sucesso',
-                'updated' => $updatedCount
+                'message' => "Sincronização concluída. {$syncedCount} vídeos atualizados.",
+                'updated' => $syncedCount
             ]);
 
         } catch (\Exception $e) {
@@ -77,25 +109,37 @@ class VideoController extends Controller
         }
     }
 
+    /**
+     * Faz download do vídeo para cache local
+     */
     public function download($id)
     {
         $video = Video::findOrFail($id);
 
         try {
-            // Simula o download (em produção, você faria o download real)
             $video->update([
                 'status' => 'downloading',
                 'cached' => false
             ]);
 
-            // Simula tempo de download
-            sleep(3);
+            // Faz download do vídeo da API
+            $response = Http::get($video->url);
+            
+            if (!$response->successful()) {
+                throw new \Exception('Erro ao baixar vídeo: ' . $response->status());
+            }
+
+            $filename = "video_{$video->api_id}_" . uniqid() . '.mp4';
+            $path = "videos/{$filename}";
+
+            // Salva o arquivo localmente
+            Storage::disk('public')->put($path, $response->body());
 
             $video->update([
-                'status' => 'synced',
+                'status' => 'cached',
                 'cached' => true,
-                'last_sync' => now(),
-                'path' => 'videos/' . $video->name
+                'file_path' => $path,
+                'last_sync' => now()
             ]);
 
             return response()->json([
@@ -114,19 +158,22 @@ class VideoController extends Controller
         }
     }
 
+    /**
+     * Remove vídeo do cache local
+     */
     public function removeFromCache($id)
     {
         $video = Video::findOrFail($id);
 
         try {
-            if ($video->cached && Storage::exists($video->path)) {
-                Storage::delete($video->path);
+            if ($video->cached && $video->file_path && Storage::disk('public')->exists($video->file_path)) {
+                Storage::disk('public')->delete($video->file_path);
             }
 
             $video->update([
                 'cached' => false,
-                'status' => 'pending',
-                'path' => null
+                'status' => 'available',
+                'file_path' => null
             ]);
 
             return response()->json([
@@ -143,39 +190,49 @@ class VideoController extends Controller
         }
     }
 
+    /**
+     * Upload de vídeo para a API
+     */
     public function upload(Request $request)
     {
 
         $request->validate([
-            'video' => 'required|file|mimetypes:video/mp4,video/quicktime|max:102400',
-            'title' => 'required|string|max:255'
+            'video' => 'required|file|mimetypes:video/mp4,video/avi,video/mov,video/wmv',
+            // 'video' => 'required|file',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string'
         ]);
 
         try {
             $file = $request->file('video');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
 
-            // Armazena no disco público
-            $path = $file->storeAs('videos', $filename, 'public');
+            // 1️⃣ Garante que existe o diretório public/videos
+            $destinationPath = public_path('videos');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
 
-            // Obtém a URL base dinamicamente
-            $baseUrl = URL::to('/');
+            // 2️⃣ Gera um nome único para o vídeo
+            $filename = time() . '_' . $file->getClientOriginalName();
 
-            // Remove a barra final se existir para evitar duplicação
-            $baseUrl = rtrim($baseUrl, '/');
+            // 3️⃣ Move o vídeo para public/videos
+            $file->move($destinationPath, $filename);
 
-            // Cria a URL completa do vídeo
-            $videoUrl = $baseUrl . '/storage/videos/' . $filename;
+            // 4️⃣ Caminho completo do ficheiro
+            $localFilePath = url('/videos') . '/' . $filename;
 
+            // 6️⃣ Cria registro local
             $video = Video::create([
+                'api_id' => 'local_' . uniqid(),
                 'title' => $request->title,
                 'name' => $filename,
-                'duration' => $this->getVideoDuration($file),
-                'size' => $file->getSize(),
-                'status' => 'synced',
-                'cached' => true,
-                'path' => $path,
-                'url' => $videoUrl, // URL dinâmica baseada no root da aplicação
+                'description' => $request->description,
+                'duration' => '0:00',
+                'size' => /*filesize($localFilePath) ??*/ '3000',
+                'url' => $localFilePath,
+                'thumbnail_url' => null, // Poderia gerar thumbnail depois
+                'status' => 'available',
+                'is_active' => true,
                 'last_sync' => now()
             ]);
 
@@ -186,9 +243,42 @@ class VideoController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            return $e;
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao enviar vídeo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Remove vídeo (local e na API)
+     */
+    public function destroy($id)
+    {
+        $video = Video::findOrFail($id);
+
+        try {
+            // Remove da API
+            $response = Http::delete("{$this->apiBaseUrl}/videos/{$video->api_id}");
+            
+            // Remove localmente
+            if ($video->cached && $video->file_path) {
+                Storage::disk('public')->delete($video->file_path);
+            }
+            
+            $video->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vídeo removido com sucesso'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover vídeo: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -198,18 +288,27 @@ class VideoController extends Controller
         $totalVideos = Video::count();
         $cachedVideos = Video::where('cached', true)->count();
         $totalSize = Video::where('cached', true)->sum('size');
+        $activeVideos = Video::where('is_active', true)->count();
 
         return [
             'total_videos' => $totalVideos,
             'cached_videos' => $cachedVideos,
+            'active_videos' => $activeVideos,
             'total_size' => $this->formatSize($totalSize),
-            'api_status' => 'online' // Você pode verificar o status real da API aqui
+            'api_status' => $this->checkApiStatus()
         ];
     }
 
-    /**
-     * Formata o tamanho em bytes para GB/MB
-     */
+    private function checkApiStatus()
+    {
+        try {
+            $response = Http::timeout(5)->get("{$this->apiBaseUrl}/health");
+            return $response->successful() ? 'online' : 'offline';
+        } catch (\Exception $e) {
+            return 'offline';
+        }
+    }
+
     private function formatSize($bytes)
     {
         if ($bytes >= 1073741824) {
@@ -219,14 +318,5 @@ class VideoController extends Controller
         } else {
             return number_format($bytes / 1024, 2) . ' KB';
         }
-    }
-
-    /**
-     * Obtém a duração do vídeo (simplificado)
-     */
-    private function getVideoDuration($file)
-    {
-        // Em produção, use uma biblioteca como ffmpeg para obter a duração real
-        return '0:00'; // Simulação
     }
 }

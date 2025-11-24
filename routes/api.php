@@ -18,9 +18,11 @@ Route::post('/videos/{id}/download', [VideoController::class, 'download']);
 Route::delete('/videos/{id}/cache', [VideoController::class, 'removeFromCache']);
 Route::post('/videos/upload', [VideoController::class, 'upload']);
 Route::post('/videos/preview', [VideoController::class, 'preview']);
+Route::delete('/videos/{id}', [VideoController::class, 'destroy']); // Nova rota para deletar
 
 // Rotas para Agendamentos
 Route::get('/schedules', [ScheduleController::class, 'index']);
+Route::get('/schedules/clients', [ScheduleController::class, 'schedules']);
 Route::post('/schedules', [ScheduleController::class, 'store']);
 Route::put('/schedules/{id}/status', [ScheduleController::class, 'toggleStatus']);
 Route::post('/schedules/{id}/duplicate', [ScheduleController::class, 'duplicate']);

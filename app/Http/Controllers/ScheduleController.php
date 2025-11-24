@@ -6,12 +6,13 @@ use App\Models\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 
 class ScheduleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // $this->middleware('auth');
     }
 
     public function goToSchedule()
@@ -20,18 +21,48 @@ class ScheduleController extends Controller
         return view('schedule', compact('schedules'));
     }
 
+    public function schedules(): JsonResponse
+    {
+        // Mapeamento dos dias da semana de inglês para português
+        $diasDaSemana = [
+            'Sunday' => 'dom',
+            'Monday' => 'seg',
+            'Tuesday' => 'ter',
+            'Wednesday' => 'qua',
+            'Thursday' => 'qui',
+            'Friday' => 'sex',
+            'Saturday' => 'sab',
+        ];
+
+        // Obtém o nome do dia da semana atual em português
+        $diaAtual = $diasDaSemana[now()->format('l')];
+
+        // Obtém os horários agendados que estão ativos e no dia atual
+        $schedules = Schedule::where('active', true)
+            ->whereJsonContains('days', $diaAtual) // Verifica se 'days' contém o dia atual
+            ->get();
+
+        // Extraindo os horários dos objetos Schedule
+        $scheduleTimes = $schedules->pluck('time')->toArray();
+
+        return response()->json([
+            'schedule_times' => $scheduleTimes
+        ]);
+    }
+
     public function index()
     {
         $schedules = Schedule::with('video')->get()->map(function($schedule) {
             return [
                 'id' => $schedule->id,
                 'title' => $schedule->title,
-                'video' => $schedule->video->name,
+                'video' => $schedule->video ? $schedule->video->title : 'N/A',
+                'video_id' => $schedule->video_id,
                 'time' => $schedule->time,
                 'days' => json_decode($schedule->days),
                 'monitor' => $schedule->monitor,
                 'active' => $schedule->active,
-                'duration' => $schedule->video->duration
+                'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
             ];
         });
 

@@ -264,7 +264,7 @@ export default {
       };
 
       // Aqui você faria uma requisição para salvar o agendamento
-      /*
+
       axios.post('/api/schedules', schedule)
         .then(response => {
           this.schedules.push(response.data);
@@ -275,8 +275,8 @@ export default {
           console.error('Erro ao criar agendamento:', error);
           this.showToast('Erro', 'Falha ao criar agendamento', 'error');
         });
-      */
 
+console.log(schedule)
       // Simulação de sucesso
       this.schedules.push(schedule);
       this.toggleScheduleForm();

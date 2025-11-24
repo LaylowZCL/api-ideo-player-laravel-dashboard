@@ -10,13 +10,13 @@ class SettingController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // $this->middleware('auth');
     }
 
     public function goToSettings()
     {
         $settings = Setting::first() ?? new Setting([
-            'api_endpoint' => 'https://api.empresa.com/videos',
+            'api_endpoint' => 'http://127.0.0.1:8000/api/videos',
             'api_key' => '',
             'sync_interval' => 30,
             'default_monitor' => 'principal',
@@ -87,7 +87,7 @@ class SettingController extends Controller
     private function createDefaultSettings()
     {
         return Setting::create([
-            'api_endpoint' => "https://api.empresa.com/videos",
+            'api_endpoint' => "http://127.0.0.1:8000/api/videos",
             'api_key' => "",
             'sync_interval' => 30,
             'default_monitor' => "principal",
@@ -132,7 +132,7 @@ class SettingController extends Controller
     {
         $settings = Setting::first() ?? new Setting();
         $settings->fill([
-            'api_endpoint' => 'https://api.empresa.com/videos',
+            'api_endpoint' => 'http://127.0.0.1:8000/api/videos',
             'api_key' => '',
             'sync_interval' => 30,
             'default_monitor' => 'principal',

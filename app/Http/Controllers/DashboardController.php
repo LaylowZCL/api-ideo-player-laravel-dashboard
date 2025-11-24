@@ -12,7 +12,7 @@ class DashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // $this->middleware('auth');
     }
 
     public function dashboard(Request $request)
@@ -28,14 +28,14 @@ class DashboardController extends Controller
             [
                 'title' => 'Vídeos em Cache',
                 'value' => Video::where('cached', true)->count(),
-                'description' => number_format(Video::where('cached', true)->sum('size'), 1) . ' GB total',
+                'description' => number_format(Video::where('cached', true)->sum('size') / 1073741824, 1) . ' GB total',
                 'icon' => 'bi-camera-video',
                 'color' => 'text-success'
             ],
             [
-                'title' => 'Execuções Hoje',
-                'value' => Log::where('status', 'success')->whereDate('created_at', today())->count(),
-                'description' => '100% sucesso',
+                'title' => 'Vídeos Disponíveis',
+                'value' => Video::where('is_active', true)->count(),
+                'description' => 'Na API externa',
                 'icon' => 'bi-play-circle',
                 'color' => 'text-primary'
             ],

@@ -14,4 +14,9 @@ class Schedule extends Model
         'days' => 'array',
         'active' => 'boolean',
     ];
+
+    public function video()
+    {
+        return $this->belongsTo(Video::class);
+    }
 }

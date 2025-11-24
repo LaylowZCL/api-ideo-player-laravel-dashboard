@@ -1,187 +1,357 @@
 <template>
-
-    <!-- Cabeçalho -->
-    <div class="mb-4">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h1 class="h2 mb-1">Gerenciamento de Vídeos</h1>
-          <p class="text-muted mb-0">Controle do cache local e sincronização com a API</p>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-          <button class="btn btn-outline-secondary" @click="refreshVideos" :disabled="isRefreshing">
-            <i class="bi bi-arrow-clockwise me-1" :class="{ 'spin': isRefreshing }"></i>
-            <span>{{ isRefreshing ? 'Sincronizando...' : 'Sincronizar' }}</span>
-          </button>
-          <button class="btn btn-primary" @click="showUploadModal">
-            <i class="bi bi-upload me-1"></i>
-            Upload Manual
-          </button>
-        </div>
+  <!-- Cabeçalho -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h1 class="h2 mb-1">Gerenciamento de Vídeos</h1>
+        <p class="text-muted mb-0">Controle do cache local e sincronização com a API</p>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-outline-secondary" @click="refreshVideos" :disabled="isRefreshing">
+          <i class="bi bi-arrow-clockwise me-1" :class="{ 'spin': isRefreshing }"></i>
+          <span>{{ isRefreshing ? 'Sincronizando...' : 'Sincronizar API' }}</span>
+        </button>
+        <button class="btn btn-primary" @click="showUploadModal">
+          <i class="bi bi-upload me-1"></i>
+          Upload Manual
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Estatísticas -->
-    <div class="row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <p class="small text-muted mb-1">Vídeos em Cache</p>
-                <h3 class="h4 mb-0">{{ stats.cached_videos }}/{{ stats.total_videos }}</h3>
-              </div>
-              <i class="bi bi-hdd fs-2 text-success"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <p class="small text-muted mb-1">Espaço Utilizado</p>
-                <h3 class="h4 mb-0">{{ stats.total_size }}</h3>
-              </div>
-              <i class="bi bi-camera-video fs-2 text-info"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <p class="small text-muted mb-1">Status da API</p>
-                <h3 class="h4 mb-0">Online</h3>
-              </div>
-              <i class="bi bi-wifi fs-2 text-success"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Busca -->
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <div class="position-relative">
-          <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-          <input
-            type="text"
-            class="form-control ps-5"
-            placeholder="Buscar vídeos..."
-            v-model="searchTerm"
-            @input="filterVideos"
-          >
-        </div>
-      </div>
-    </div>
-
-    <!-- Lista de Vídeos -->
-    <div id="videos-list">
-      <div
-        class="card mb-3 video-item"
-        v-for="video in filteredVideos"
-        :key="video.id"
-        :data-video-name="video.name.toLowerCase()"
-        :data-video-title="video.title.toLowerCase()"
-      >
+  <!-- Estatísticas -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card">
         <div class="card-body">
-          <div class="d-flex align-items-center gap-3">
-            <!-- Thumbnail -->
-            <div class="video-thumbnail">
-              <i class="bi bi-camera-video fs-4 text-muted"></i>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="small text-muted mb-1">Total de Vídeos</p>
+              <h3 class="h4 mb-0">{{ stats.total_videos }}</h3>
             </div>
-
-            <!-- Informações do Vídeo -->
-            <div class="flex-fill">
-              <div class="d-flex align-items-center gap-3 mb-1">
-                <h6 class="mb-0">{{ video.title }}</h6>
-                <span class="badge" :class="getStatusBadgeClass(video.status)">
-                  {{ getStatusText(video.status) }}
-                </span>
-              </div>
-              <p class="small text-muted mb-2">{{ video.name }}</p>
-              <div class="d-flex align-items-center gap-4 small text-muted">
-                <span>
-                  <i class="bi bi-clock me-1"></i>
-                  {{ video.duration }}
-                </span>
-                <span>{{ video.size }}</span>
-                <span v-if="video.lastSync">Sincronizado: {{ video.lastSync }}</span>
-              </div>
-              <div class="mt-2" v-if="video.status === 'downloading'">
-                <div class="progress" style="height: 6px;">
-                  <div class="progress-bar" style="width: 45%"></div>
-                </div>
-                <small class="text-muted">Baixando... 45%</small>
-              </div>
-            </div>
-
-            <!-- Ações -->
-            <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-outline-secondary btn-sm" @click="previewVideo(video.id)">
-                <i class="bi bi-play"></i>
-              </button>
-
-              <button
-                v-if="video.cached"
-                class="btn btn-outline-danger btn-sm"
-                @click="deleteVideoFromCache(video.id)"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-
-              <button
-                v-else
-                class="btn btn-outline-secondary btn-sm"
-                @click="downloadVideo(video.id)"
-                :disabled="video.status === 'downloading'"
-              >
-                <i class="bi bi-download"></i>
-              </button>
-            </div>
+            <i class="bi bi-camera-video fs-2 text-primary"></i>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Modal de Upload -->
-    <div class="modal fade" id="uploadModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-          <div class="modal-header border-secondary">
-            <h5 class="modal-title">Upload de Vídeo</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="small text-muted mb-1">Em Cache</p>
+              <h3 class="h4 mb-0">{{ stats.cached_videos }}</h3>
+            </div>
+            <i class="bi bi-hdd fs-2 text-success"></i>
           </div>
-          <div class="modal-body">
-            <form @submit.prevent="uploadVideo">
-              <div class="mb-3">
-                <label for="videoTitle" class="form-label">Título</label>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="small text-muted mb-1">Espaço Utilizado</p>
+              <h3 class="h4 mb-0">{{ stats.total_size }}</h3>
+            </div>
+            <i class="bi bi-hdd-stack fs-2 text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="small text-muted mb-1">Status da API</p>
+              <h3 class="h4 mb-0" :class="stats.api_status === 'online' ? 'text-success' : 'text-danger'">
+                {{ stats.api_status === 'online' ? 'Online' : 'Offline' }}
+              </h3>
+            </div>
+            <i class="bi bi-wifi fs-2" :class="stats.api_status === 'online' ? 'text-success' : 'text-danger'"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Busca e Filtros -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="position-relative">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+        <input
+          type="text"
+          class="form-control ps-5"
+          placeholder="Buscar por título ou nome..."
+          v-model="searchTerm"
+          @input="filterVideos"
+        >
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" v-model="statusFilter" @change="filterVideos">
+        <option value="">Todos os status</option>
+        <option value="cached">Em cache</option>
+        <option value="available">Disponível</option>
+        <option value="downloading">Baixando</option>
+        <option value="error">Erro</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-outline-secondary w-100" @click="clearFilters">
+        <i class="bi bi-x-circle me-1"></i>
+        Limpar Filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de Vídeos -->
+  <div id="videos-list">
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+      </div>
+      <p class="text-muted mt-2">Carregando vídeos...</p>
+    </div>
+
+    <div v-else-if="filteredVideos.length === 0" class="text-center py-5">
+      <i class="bi bi-camera-video-off display-4 text-muted mb-3"></i>
+      <h5 class="text-muted">Nenhum vídeo encontrado</h5>
+      <p class="text-muted">Tente ajustar os filtros ou sincronizar com a API.</p>
+    </div>
+
+    <div
+      class="card mb-3 video-item"
+      v-for="video in filteredVideos"
+      :key="video.id"
+    >
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <!-- Thumbnail -->
+          <div class="video-thumbnail position-relative">
+            <i class="bi bi-camera-video fs-4 text-muted"></i>
+            <div v-if="video.thumbnail_url" class="thumbnail-image">
+              <img :src="video.thumbnail_url" :alt="video.title" class="img-fluid rounded">
+            </div>
+            <div v-if="video.status === 'downloading'" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 rounded">
+              <div class="spinner-border spinner-border-sm text-white" role="status"></div>
+            </div>
+          </div>
+
+          <!-- Informações do Vídeo -->
+          <div class="flex-fill">
+            <div class="d-flex align-items-center gap-3 mb-1">
+              <h6 class="mb-0">{{ video.title }}</h6>
+              <span class="badge" :class="getStatusBadgeClass(video)">
+                {{ getStatusText(video) }}
+              </span>
+              <span v-if="video.is_active === false" class="badge bg-secondary">Inativo</span>
+            </div>
+            
+            <p class="small text-muted mb-1" v-if="video.description">{{ video.description }}</p>
+            <p class="small text-muted mb-2">{{ video.name }}</p>
+            
+            <div class="d-flex align-items-center gap-4 small text-muted">
+              <span>
+                <i class="bi bi-clock me-1"></i>
+                {{ video.duration || 'N/A' }}
+              </span>
+              <span>
+                <i class="bi bi-file-earmark me-1"></i>
+                {{ video.size }}
+              </span>
+              <span v-if="video.lastSync">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                {{ video.lastSync }}
+              </span>
+              <span v-if="video.api_id">
+                <i class="bi bi-cloud me-1"></i>
+                ID: {{ video.api_id }}
+              </span>
+            </div>
+
+            <!-- Progresso de Download -->
+            <div class="mt-2" v-if="video.status === 'downloading'">
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 45%"></div>
+              </div>
+              <small class="text-muted">Baixando... 45%</small>
+            </div>
+          </div>
+
+          <!-- Ações -->
+          <div class="d-flex align-items-center gap-2">
+            <button 
+              class="btn btn-outline-primary btn-sm" 
+              @click="previewVideo(video)"
+              :disabled="!video.cached && !video.url"
+              :title="!video.cached && !video.url ? 'Vídeo não disponível para preview' : 'Preview do vídeo'"
+            >
+              <i class="bi bi-play"></i>
+            </button>
+
+            <button
+              v-if="video.cached"
+              class="btn btn-outline-danger btn-sm"
+              @click="deleteVideoFromCache(video.id)"
+              title="Remover do cache local"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+
+            <button
+              v-else-if="video.status !== 'downloading'"
+              class="btn btn-outline-success btn-sm"
+              @click="downloadVideo(video.id)"
+              :disabled="!video.url"
+              :title="!video.url ? 'Vídeo não disponível para download' : 'Baixar para cache local'"
+            >
+              <i class="bi bi-download"></i>
+            </button>
+
+            <button
+              v-else
+              class="btn btn-outline-secondary btn-sm"
+              disabled
+            >
+              <i class="bi bi-hourglass-split"></i>
+            </button>
+
+            <button
+              class="btn btn-outline-warning btn-sm"
+              @click="viewVideoDetails(video)"
+              title="Ver detalhes"
+            >
+              <i class="bi bi-info-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Upload -->
+  <div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">Upload de Vídeo para API</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" @click="closeUploadModal"></button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="uploadVideo">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label for="videoTitle" class="form-label">Título do Vídeo *</label>
                 <input type="text" class="form-control" id="videoTitle" v-model="uploadData.title" required>
               </div>
-              <div class="mb-3">
-                <label for="videoFile" class="form-label">Arquivo de Vídeo</label>
-                <input type="file" class="form-control" id="videoFile" @change="handleFileUpload" accept="video/*" required>
+              
+              <div class="col-md-12">
+                <label for="videoDescription" class="form-label">Descrição</label>
+                <textarea class="form-control" id="videoDescription" v-model="uploadData.description" rows="3" placeholder="Descrição opcional do vídeo..."></textarea>
               </div>
-              <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary" :disabled="isUploading">
-                  <span v-if="isUploading">
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Enviando...
+              
+              <div class="col-md-12">
+                <label for="videoFile" class="form-label">Arquivo de Vídeo *</label>
+                <input type="file" class="form-control" id="videoFile" @change="handleFileUpload" accept="video/mp4,video/avi,video/mov,video/wmv" required>
+                <div class="form-text">
+                  Formatos suportados: MP4, AVI, MOV, WMV. Tamanho máximo: 100MB
+                </div>
+              </div>
+
+              <div class="col-md-12" v-if="uploadData.file">
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Arquivo selecionado: <strong>{{ uploadData.file.name }}</strong>
+                  ({{ formatFileSize(uploadData.file.size) }})
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2 pt-4 border-top mt-4">
+              <button type="button" class="btn btn-secondary" @click="closeUploadModal">Cancelar</button>
+              <button type="submit" class="btn btn-primary" :disabled="isUploading || !uploadData.file">
+                <span v-if="isUploading">
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  Enviando...
+                </span>
+                <span v-else>
+                  <i class="bi bi-upload me-1"></i>
+                  Enviar para API
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes -->
+  <div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">Detalhes do Vídeo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="selectedVideo" class="row g-3">
+            <div class="col-md-4">
+              <div class="text-center">
+                <div class="video-thumbnail-large mb-3">
+                  <i v-if="!selectedVideo.thumbnail_url" class="bi bi-camera-video fs-1 text-muted"></i>
+                  <img v-else :src="selectedVideo.thumbnail_url" :alt="selectedVideo.title" class="img-fluid rounded">
+                </div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <h6>{{ selectedVideo.title }}</h6>
+              <p class="text-muted small mb-3" v-if="selectedVideo.description">{{ selectedVideo.description }}</p>
+              
+              <div class="row small text-muted">
+                <div class="col-6 mb-2">
+                  <strong>Nome do arquivo:</strong><br>
+                  {{ selectedVideo.name }}
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>Duração:</strong><br>
+                  {{ selectedVideo.duration || 'N/A' }}
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>Tamanho:</strong><br>
+                  {{ selectedVideo.size }}
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>Status:</strong><br>
+                  <span :class="'badge ' + getStatusBadgeClass(selectedVideo)">
+                    {{ getStatusText(selectedVideo) }}
                   </span>
-                  <span v-else>Enviar</span>
-                </button>
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>ID da API:</strong><br>
+                  {{ selectedVideo.api_id || 'N/A' }}
+                </div>
+                <div class="col-6 mb-2">
+                  <strong>Última sincronização:</strong><br>
+                  {{ selectedVideo.lastSync || 'Nunca' }}
+                </div>
+                <div class="col-12 mb-2">
+                  <strong>URL:</strong><br>
+                  <a :href="selectedVideo.url" target="_blank" class="text-info small text-break">
+                    {{ selectedVideo.url || 'N/A' }}
+                  </a>
+                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
+  </div>
 </template>
 
 <script>
@@ -189,168 +359,334 @@ import { Modal } from 'bootstrap';
 import axios from 'axios';
 
 export default {
-  data() {
-    return {
-      videos: [],
-      filteredVideos: [],
-      stats: {
-        total_videos: 0,
-        cached_videos: 0,
-        total_size: '0 GB',
-        api_status: 'online'
-      },
-      searchTerm: '',
-      isRefreshing: false,
-      uploadModal: null,
-      uploadData: {
-        title: '',
-        file: null
-      },
-      isUploading: false
-    };
-  },
-  mounted() {
-    this.uploadModal = new Modal(document.getElementById('uploadModal'));
-    this.loadVideos();
-  },
-  methods: {
-    async loadVideos() {
-      try {
-        const response = await axios.get('/api/videos');
-        this.videos = response.data.videos;
-        this.filteredVideos = [...this.videos];
-        this.stats = response.data.stats;
-      } catch (error) {
-        console.error('Erro ao carregar vídeos:', error);
-        this.showToast('Erro', 'Falha ao carregar vídeos', 'error');
-      }
+name: 'VideosPage',
+data() {
+  return {
+    videos: [],
+    filteredVideos: [],
+    stats: {
+      total_videos: 0,
+      cached_videos: 0,
+      total_size: '0 GB',
+      api_status: 'offline'
     },
-    async refreshVideos() {
-      this.isRefreshing = true;
-      try {
-        const response = await axios.post('/api/videos/sync');
-        this.showToast('Sucesso', response.data.message, 'success');
-        await this.loadVideos();
-      } catch (error) {
-        console.error('Erro ao sincronizar vídeos:', error);
-        this.showToast('Erro', 'Falha ao sincronizar vídeos', 'error');
-      } finally {
-        this.isRefreshing = false;
-      }
+    searchTerm: '',
+    statusFilter: '',
+    loading: false,
+    isRefreshing: false,
+    uploadModal: null,
+    detailsModal: null,
+    uploadData: {
+      title: '',
+      description: '',
+      file: null
     },
-    filterVideos() {
-      if (!this.searchTerm) {
-        this.filteredVideos = [...this.videos];
-        return;
-      }
-
-      const term = this.searchTerm.toLowerCase();
-      this.filteredVideos = this.videos.filter(video =>
-        video.name.toLowerCase().includes(term) ||
-        video.title.toLowerCase().includes(term)
-      );
-    },
-    getStatusBadgeClass(status) {
-      switch (status) {
-        case 'synced': return 'bg-success';
-        case 'pending': return 'bg-warning';
-        case 'error': return 'bg-danger';
-        case 'downloading': return 'bg-info';
-        default: return 'bg-secondary';
-      }
-    },
-    getStatusText(status) {
-      switch (status) {
-        case 'synced': return 'Sincronizado';
-        case 'pending': return 'Pendente';
-        case 'error': return 'Erro';
-        case 'downloading': return 'Baixando';
-        default: return 'Desconhecido';
-      }
-    },
-    async downloadVideo(id) {
-      try {
-        const video = this.videos.find(v => v.id === id);
-        if (video) {
-          video.status = 'downloading';
-
-          const response = await axios.post(`/api/videos/${id}/download`);
-          this.showToast('Sucesso', response.data.message, 'success');
-          await this.loadVideos();
-        }
-      } catch (error) {
-        console.error('Erro ao baixar vídeo:', error);
-        this.showToast('Erro', 'Falha ao baixar vídeo', 'error');
-      }
-    },
-    deleteVideoFromCache(id) {
-      this.showConfirmModal(
-        'Tem certeza que deseja remover este vídeo do cache?',
-        async () => {
-          try {
-            await axios.delete(`/api/videos/${id}/cache`);
-            this.showToast('Sucesso', 'Vídeo removido do cache', 'success');
-            await this.loadVideos();
-          } catch (error) {
-            console.error('Erro ao remover vídeo:', error);
-            this.showToast('Erro', 'Falha ao remover vídeo', 'error');
-          }
-        }
-      );
-    },
-    previewVideo(id) {
-      const video = this.videos.find(v => v.id === id);
-      if (video) {
-        this.showToast('Preview', `Reproduzindo: ${video.title}`, 'info');
-        // Implementar a lógica de preview aqui
-      }
-    },
-    showUploadModal() {
-      this.uploadData = { title: '', file: null };
-      this.uploadModal.show();
-    },
-    handleFileUpload(event) {
-      this.uploadData.file = event.target.files[0];
-    },
-    async uploadVideo() {
-      if (!this.uploadData.file || !this.uploadData.title) {
-        this.showToast('Erro', 'Preencha todos os campos', 'error');
-        return;
-      }
-
-      this.isUploading = true;
-
-      try {
-        const formData = new FormData();
-        formData.append('title', this.uploadData.title);
-        formData.append('video', this.uploadData.file);
-
-        const response = await axios.post('/api/videos/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-        this.showToast('Sucesso', response.data.message, 'success');
-        this.uploadModal.hide();
-        await this.loadVideos();
-      } catch (error) {
-        console.error('Erro ao enviar vídeo:', error);
-        this.showToast('Erro', 'Falha ao enviar vídeo', 'error');
-      } finally {
-        this.isUploading = false;
-      }
-    },
-    showConfirmModal(message, callback) {
-      // Implementação do modal de confirmação
-      if (confirm(message)) {
-        callback();
-      }
-    },
-    showToast(title, message, type) {
-      // Implementação do toast (pode usar uma biblioteca como Toastification)
-      console.log(`[${type}] ${title}: ${message}`);
+    isUploading: false,
+    selectedVideo: null
+  };
+},
+mounted() {
+  this.uploadModal = new Modal(document.getElementById('uploadModal'));
+  this.detailsModal = new Modal(document.getElementById('detailsModal'));
+  this.loadVideos();
+},
+methods: {
+  async loadVideos() {
+    this.loading = true;
+    try {
+      const response = await axios.get('/api/videos');
+      this.videos = response.data.videos;
+      this.filteredVideos = [...this.videos];
+      this.stats = response.data.stats;
+    } catch (error) {
+      console.error('Erro ao carregar vídeos:', error);
+      this.showToast('Erro', 'Falha ao carregar vídeos da API', 'error');
+    } finally {
+      this.loading = false;
     }
+  },
+
+  async refreshVideos() {
+    this.isRefreshing = true;
+    try {
+      const response = await axios.post('/api/videos/sync');
+      this.showToast('Sucesso', response.data.message, 'success');
+      await this.loadVideos();
+    } catch (error) {
+      console.error('Erro ao sincronizar vídeos:', error);
+      this.showToast('Erro', 'Falha ao sincronizar com a API', 'error');
+    } finally {
+      this.isRefreshing = false;
+    }
+  },
+
+  filterVideos() {
+    let filtered = this.videos;
+
+    // Filtro por busca
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(video =>
+        video.name.toLowerCase().includes(term) ||
+        video.title.toLowerCase().includes(term) ||
+        (video.description && video.description.toLowerCase().includes(term))
+      );
+    }
+
+    // Filtro por status
+    if (this.statusFilter) {
+      filtered = filtered.filter(video => {
+        switch (this.statusFilter) {
+          case 'cached': return video.cached;
+          case 'available': return !video.cached && video.url;
+          case 'downloading': return video.status === 'downloading';
+          case 'error': return video.status === 'error';
+          default: return true;
+        }
+      });
+    }
+
+    this.filteredVideos = filtered;
+  },
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.statusFilter = '';
+    this.filteredVideos = [...this.videos];
+  },
+
+  getStatusBadgeClass(video) {
+    if (video.status === 'downloading') return 'bg-info';
+    if (video.status === 'error') return 'bg-danger';
+    if (video.cached) return 'bg-success';
+    if (video.url) return 'bg-warning';
+    return 'bg-secondary';
+  },
+
+  getStatusText(video) {
+    if (video.status === 'downloading') return 'Baixando';
+    if (video.status === 'error') return 'Erro';
+    if (video.cached) return 'Em cache';
+    if (video.url) return 'Disponível';
+    return 'Indisponível';
+  },
+
+  async downloadVideo(id) {
+    try {
+      const video = this.videos.find(v => v.id === id);
+      console.log(video)
+      if (video) {
+        video.status = 'downloading';
+        
+        /*const response = await axios.post(`/api/videos/${id}/download`);
+        this.showToast('Sucesso', response.data.message, 'success');
+        await this.loadVideos();*/
+
+        // Construa o link de download
+        const downloadLink = `${video.url}`;
+            
+        // Inicie o download
+        window.open(downloadLink, '_blank'); // Abre o link em uma nova aba
+        video.status = 'available'; // Atualiza o status para indicar que o download foi iniciado
+
+        this.showToast('Sucesso', 'Download iniciado!', 'success');
+        await this.loadVideos(); // Recarregue a lista de vídeos, se necessário
+      }
+    } catch (error) {
+      console.error('Erro ao baixar vídeo:', error);
+      const video = this.videos.find(v => v.id === id);
+      if (video) video.status = 'error';
+      this.showToast('Erro', 'Falha ao baixar vídeo', 'error');
+    }
+  },
+
+  deleteVideoFromCache(id) {
+    this.showConfirmModal(
+      'Tem certeza que deseja remover este vídeo do cache local? O vídeo permanecerá disponível na API.',
+      async () => {
+        try {
+          await axios.delete(`/api/videos/${id}/cache`);
+          this.showToast('Sucesso', 'Vídeo removido do cache local', 'success');
+          await this.loadVideos();
+        } catch (error) {
+          console.error('Erro ao remover vídeo:', error);
+          this.showToast('Erro', 'Falha ao remover vídeo do cache', 'error');
+        }
+      }
+    );
+  },
+
+  previewVideo(video) {
+    if (video.cached && video.url) {
+      // Abre o vídeo em uma nova aba
+      window.open(video.url, '_blank');
+    } else if (video.url) {
+      // Tenta abrir mesmo sem cache (streaming)
+      window.open(video.url, '_blank');
+    } else {
+      this.showToast('Aviso', 'Vídeo não disponível para preview', 'warning');
+    }
+  },
+
+  viewVideoDetails(video) {
+    this.selectedVideo = video;
+    this.detailsModal.show();
+  },
+
+  showUploadModal() {
+    this.uploadData = { title: '', description: '', file: null };
+    this.uploadModal.show();
+  },
+
+  closeUploadModal() {
+    this.uploadModal.hide();
+    this.uploadData = { title: '', description: '', file: null };
+  },
+
+  handleFileUpload(event) {
+    this.uploadData.file = event.target.files[0];
+  },
+
+  async uploadVideo() {
+    if (!this.uploadData.file || !this.uploadData.title) {
+      this.showToast('Erro', 'Preencha todos os campos obrigatórios', 'error');
+      return;
+    }
+
+    // Validação do tamanho do arquivo (100MB)
+    if (this.uploadData.file.size > 100 * 1024 * 1024) {
+      this.showToast('Erro', 'O arquivo deve ter no máximo 100MB', 'error');
+      return;
+    }
+
+    this.isUploading = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('title', this.uploadData.title);
+      formData.append('description', this.uploadData.description || '');
+      formData.append('video', this.uploadData.file);
+
+      console.log(this.uploadData.file);
+
+      const response = await axios.post('/api/videos/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        // timeout: 60000 // 60 segundos para upload
+      });
+
+      this.showToast('Sucesso', response.data.message, 'success');
+      this.closeUploadModal();
+      await this.loadVideos(); // Recarrega a lista
+    } catch (error) {
+      console.error('Erro ao enviar vídeo:', error);
+      let errorMessage = 'Falha ao enviar vídeo';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Timeout - o upload está demorando muito';
+      }
+      this.showToast('Erro', errorMessage, 'error');
+    } finally {
+      this.isUploading = false;
+    }
+  },
+
+  formatFileSize(bytes) {
+    if (!bytes) return '0 B';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(2048));
+    return Math.round(bytes / Math.pow(2048, i) * 100) / 100 + ' ' + sizes[i]; 
+  },
+
+  showConfirmModal(message, callback) {
+    if (confirm(message)) {
+      callback();
+    }
+  },
+
+  showToast(title, message, type) {
+    // Implementação básica - você pode integrar com uma biblioteca de toast
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0 position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '1060';
+    
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          <strong>${title}:</strong> ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+      document.body.removeChild(toast);
+    });
   }
+}
 };
 </script>
+
+<style scoped>
+.video-thumbnail {
+width: 80px;
+height: 60px;
+background-color: #f8f9fa;
+border-radius: 4px;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+overflow: hidden;
+}
+
+.thumbnail-image img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.video-thumbnail-large {
+width: 200px;
+height: 150px;
+background-color: #f8f9fa;
+border-radius: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+}
+
+.spin {
+animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
+}
+
+.progress-bar-striped {
+background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+background-size: 1rem 1rem;
+}
+
+.progress-bar-animated {
+animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+0% { background-position: 1rem 0; }
+100% { background-position: 0 0; }
+}
+
+.toast {
+min-width: 300px;
+}
+</style>

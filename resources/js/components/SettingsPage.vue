@@ -34,7 +34,7 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label for="api-endpoint" class="form-label">Endpoint da API</label>
-                <input type="url" class="form-control" id="api-endpoint" v-model="settings.apiEndpoint" placeholder="https://api.empresa.com/videos">
+                <input type="url" class="form-control" id="api-endpoint" v-model="settings.apiEndpoint" placeholder="http://127.0.0.1:8000/api/videos">
               </div>
               <div class="col-md-6">
                 <label for="api-key" class="form-label">Chave da API</label>
@@ -271,7 +271,7 @@ export default {
   data() {
     return {
       settings: {
-        apiEndpoint: "https://api.empresa.com/videos",
+        apiEndpoint: "http://127.0.0.1:8000/api/videos",
         apiKey: "",
         syncInterval: "30",
         defaultMonitor: "principal",
@@ -358,7 +358,7 @@ export default {
         'Tem certeza que deseja restaurar as configurações padrão? Todas as configurações personalizadas serão perdidas.',
         () => {
           this.settings = {
-            apiEndpoint: "https://api.empresa.com/videos",
+            apiEndpoint: "http://127.0.0.1:8000/api/videos",
             apiKey: "",
             syncInterval: "30",
             defaultMonitor: "principal",
