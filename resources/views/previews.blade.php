@@ -9,5 +9,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/components/PreviewPage.vue'])
+@vite(['resources/js/app.js'])
 @endsection

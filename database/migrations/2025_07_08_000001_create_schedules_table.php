@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('video');
+            $table->string('video_url');
             $table->time('time');
             $table->json('days');
             $table->string('monitor');

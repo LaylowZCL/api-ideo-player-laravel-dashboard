@@ -56,10 +56,10 @@ class ScheduleController extends Controller
             return [
                 'id' => $schedule->id,
                 'title' => $schedule->title,
-                'video' => $schedule->video ? $schedule->video->title : 'N/A',
+                'video_url' => $schedule->video ? $schedule->video->title : 'N/A',
                 'video_id' => $schedule->video_id,
                 'time' => $schedule->time,
-                'days' => json_decode($schedule->days),
+                'days' => is_string($schedule->days) ? json_decode($schedule->days, true) : $schedule->days,
                 'monitor' => $schedule->monitor,
                 'active' => $schedule->active,
                 'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
