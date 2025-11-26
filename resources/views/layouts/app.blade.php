@@ -47,6 +47,7 @@
                         <i class="bi bi-camera-video"></i>
                         <span>Vídeos</span>
                     </a>
+                    {{--
                     <a href="{{ route('preview') }}" class="nav-btn {{ request()->routeIs('preview') ? 'active' : '' }}">
                         <i class="bi bi-play-circle"></i>
                         <span>Preview</span>
@@ -55,6 +56,7 @@
                         <i class="bi bi-activity"></i>
                         <span>Logs</span>
                     </a>
+                    --}}
                     <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i>
                         <span>Configurações</span>

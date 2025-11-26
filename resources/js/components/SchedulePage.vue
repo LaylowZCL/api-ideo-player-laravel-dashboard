@@ -26,9 +26,14 @@
               <input type="text" class="form-control" id="schedule-title" v-model="newSchedule.title" placeholder="Ex: Demonstração do produto" required>
             </div>
             <div class="col-md-6">
-              <label for="schedule-video" class="form-label">Arquivo de Vídeo</label>
-              <input type="text" class="form-control" id="schedule-video" v-model="newSchedule.video" placeholder="Ex: demo_produto.mp4" required>
-            </div>
+          <label for="schedule-video" class="form-label">Arquivo de Vídeo</label>
+          <select class="form-select" id="schedule-video" v-model="newSchedule.video_url" required>
+            <option value="">Selecione um vídeo</option>
+            <option v-for="video in videos" :key="video.id" :value="video.name">
+              {{ video.title }} ({{ video.duration }})
+            </option>
+          </select>
+        </div>
           </div>
 
           <div class="row g-3 mb-3">
@@ -102,7 +107,7 @@
                 </span>
                 <span>
                   <i class="bi bi-play-circle me-1"></i>
-                  {{ schedule.video }}
+                  {{ schedule.video_url }}
                 </span>
               </div>
               <div class="d-flex align-items-center gap-2">
@@ -160,6 +165,7 @@ export default {
   data() {
     return {
       showForm: false,
+      videos: [],
       daysOfWeek: [
         { short: "seg", full: "Segunda" },
         { short: "ter", full: "Terça" },
@@ -171,7 +177,7 @@ export default {
       ],
       newSchedule: {
         title: '',
-        video: '',
+        video_url: '',
         time: '',
         days: [],
         monitor: 'Principal',
@@ -183,7 +189,7 @@ export default {
         {
           id: 1,
           title: "Demonstração do Produto",
-          video: "demo_produto.mp4",
+          video_url: "demo_produto.mp4",
           time: "09:00",
           days: ["seg", "ter", "qua"],
           monitor: "Principal",
@@ -193,7 +199,7 @@ export default {
         {
           id: 2,
           title: "Promoção Especial",
-          video: "promocao.mp4",
+          video_url: "promocao.mp4",
           time: "12:30",
           days: ["sex", "sab"],
           monitor: "Todos",
@@ -210,12 +216,13 @@ export default {
   mounted() {
     this.confirmModal = new Modal(document.getElementById('confirmModal'));
     this.loadSchedules();
+    this.loadVideos();
   },
   methods: {
     loadSchedules() {
       // Aqui você faria uma requisição para obter os agendamentos
       // Exemplo com axios:
-      /*
+
       axios.get('/api/schedules')
         .then(response => {
           this.schedules = response.data;
@@ -225,7 +232,7 @@ export default {
         .catch(error => {
           console.error('Erro ao carregar agendamentos:', error);
         });
-      */
+
     },
     toggleScheduleForm() {
       this.showForm = !this.showForm;
@@ -236,7 +243,7 @@ export default {
     resetScheduleForm() {
       this.newSchedule = {
         title: '',
-        video: '',
+        video_url: '',
         time: '',
         days: [],
         monitor: 'Principal',
@@ -252,11 +259,22 @@ export default {
         this.newSchedule.days.splice(index, 1);
       }
     },
+    loadVideos() {
+    axios.get('/api/videos')
+      .then(response => {
+        this.videos = response.data.videos;
+      })
+      .catch(error => {
+        console.error('Erro ao carregar vídeos:', error);
+      });
+  },
     createSchedule() {
-      if (!this.newSchedule.title || !this.newSchedule.video || !this.newSchedule.time || this.newSchedule.days.length === 0) {
+      if (!this.newSchedule.title || !this.newSchedule.video_url || !this.newSchedule.time || this.newSchedule.days.length === 0) {
         this.showToast('Erro', 'Preencha todos os campos obrigatórios', 'error');
         return;
       }
+
+      console.log('Xetafaken')
 
       const schedule = {
         ...this.newSchedule,
@@ -264,7 +282,6 @@ export default {
       };
 
       // Aqui você faria uma requisição para salvar o agendamento
-
       axios.post('/api/schedules', schedule)
         .then(response => {
           this.schedules.push(response.data);
@@ -276,7 +293,7 @@ export default {
           this.showToast('Erro', 'Falha ao criar agendamento', 'error');
         });
 
-console.log(schedule)
+      console.log(schedule)
       // Simulação de sucesso
       this.schedules.push(schedule);
       this.toggleScheduleForm();

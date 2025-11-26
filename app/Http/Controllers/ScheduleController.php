@@ -38,9 +38,7 @@ class ScheduleController extends Controller
         $diaAtual = $diasDaSemana[now()->format('l')];
 
         // Obtém os horários agendados que estão ativos e no dia atual
-        $schedules = Schedule::where('active', true)
-            ->whereJsonContains('days', $diaAtual) // Verifica se 'days' contém o dia atual
-            ->get();
+        $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
 
         // Extraindo os horários dos objetos Schedule
         $scheduleTimes = $schedules->pluck('time')->toArray();
@@ -57,7 +55,7 @@ class ScheduleController extends Controller
                 'id' => $schedule->id,
                 'title' => $schedule->title,
                 'video_url' => $schedule->video ? $schedule->video->title : 'N/A',
-                'video_id' => $schedule->video_id,
+                //'video_id' => $schedule->video_id,
                 'time' => $schedule->time,
                 'days' => is_string($schedule->days) ? json_decode($schedule->days, true) : $schedule->days,
                 'monitor' => $schedule->monitor,
@@ -76,7 +74,8 @@ class ScheduleController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'video_id' => 'required|exists:videos,id',
+            // 'video_url' => 'required|exists:videos,id',
+            'video_url' => 'required',
             'time' => 'required|date_format:H:i',
             'days' => 'required|array',
             'days.*' => 'in:seg,ter,qua,qui,sex,sab,dom',
@@ -87,9 +86,9 @@ class ScheduleController extends Controller
         try {
             $schedule = Schedule::create([
                 'title' => $request->title,
-                'video_id' => $request->video_id,
+                'video_url' => $request->video_url,
                 'time' => $request->time,
-                'days' => json_encode($request->days),
+                'days' => $request->days,
                 'monitor' => $request->monitor,
                 'active' => $request->active ?? true
             ]);
@@ -144,7 +143,7 @@ class ScheduleController extends Controller
         try {
             $schedule = Schedule::create([
                 'title' => $original->title . ' (Cópia)',
-                'video_id' => $original->video_id,
+                'video_url' => $original->video_url,
                 'time' => $original->time,
                 'days' => $original->days,
                 'monitor' => $original->monitor,
