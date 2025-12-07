@@ -28,8 +28,20 @@ return [
     | services the application utilizes. Set this in your ".env" file.
     |
     */
-
     'env' => env('APP_ENV', 'production'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Authentication
+    |--------------------------------------------------------------------------
+    |
+    | These are the key that will allows Electron App to access the API endpoints
+    | it will deny any trying connection or json access from the web browsers
+    |
+    */
+    
+    'api_key' => env('APP_API_KEY', 'VIDEO_POPUP_SECRET_2025'),
+    'client_id' => env('APP_CLIENT_ID', 'ELECTRON_VIDEO_PLAYER'),
 
     /*
     |--------------------------------------------------------------------------

@@ -48,6 +48,30 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /*
+    public function scheduledVideos(){
+        $diasDaSemana = [
+            'Sunday' => 'dom',
+            'Monday' => 'seg',
+            'Tuesday' => 'ter',
+            'Wednesday' => 'qua',
+            'Thursday' => 'qui',
+            'Friday' => 'sex',
+            'Saturday' => 'sab',
+        ];
+
+        $diaAtual = $diasDaSemana[now()->format('l')];
+        $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
+
+        $scheduledVideos = $schedules->pluck('video_url')->toArray();
+
+        return response()->json([
+            'videos' => $schedules
+        ]);
+
+        return $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
+    } */
+
     public function index()
     {
         $schedules = Schedule::with('video')->get()->map(function($schedule) {
@@ -86,7 +110,7 @@ class ScheduleController extends Controller
         try {
             $schedule = Schedule::create([
                 'title' => $request->title,
-                'video_url' => $request->video_url,
+                'video_url' => url($request->video_url),
                 'time' => $request->time,
                 'days' => $request->days,
                 'monitor' => $request->monitor,

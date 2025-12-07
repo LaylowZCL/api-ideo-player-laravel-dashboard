@@ -55,7 +55,7 @@
         </div>
       </div>
 
-      <!-- Configurações de Exibição -->
+      <!-- Configurações de Exibição --
       <div class="col-md-6">
         <div class="card h-100">
           <div class="card-header">
@@ -90,7 +90,7 @@
         </div>
       </div>
 
-      <!-- Configurações do Sistema -->
+      -- Configurações do Sistema --
       <div class="col-md-6">
         <div class="card h-100">
           <div class="card-header">
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <!-- Armazenamento e Cache -->
+      -- Armazenamento e Cache --
       <div class="col-12">
         <div class="card">
           <div class="card-header">
@@ -174,7 +174,7 @@
         </div>
       </div>
 
-      <!-- Performance -->
+      -- Performance --
       <div class="col-12">
         <div class="card">
           <div class="card-header">
@@ -242,7 +242,9 @@
           </div>
         </div>
       </div>
+    -->
     </div>
+ 
 
     <!-- Modal de Confirmação -->
     <div class="modal fade" id="confirmModal" tabindex="-1">
@@ -266,23 +268,33 @@
 
 <script>
 import { Modal } from 'bootstrap';
+import axios from 'axios';
 
 export default {
   data() {
     return {
       settings: {
+        // Configurações de API
         apiEndpoint: "http://127.0.0.1:8000/api/videos",
         apiKey: "",
         syncInterval: "30",
+        
+        // Configurações de Exibição
         defaultMonitor: "principal",
         alwaysOnTop: true,
         autoCloseDelay: "0",
+        
+        // Configurações do Sistema
         startWithWindows: true,
         showInSystemTray: true,
         enableNotifications: true,
+        
+        // Armazenamento e Cache
         cacheLocation: "C:\\VideoScheduler\\Cache",
         maxCacheSize: "5",
         autoCleanup: true,
+        
+        // Performance
         logLevel: "info",
         maxMemoryUsage: "200",
         enableHardwareAcceleration: true,
@@ -291,31 +303,35 @@ export default {
       },
       confirmMessage: '',
       confirmCallback: null,
-      confirmModal: null
+      confirmModal: null,
+      isLoading: false,
+      isTestingConnection: false
     };
   },
   mounted() {
     // Inicializa o modal
     this.confirmModal = new Modal(document.getElementById('confirmModal'));
-
+    
     // Carrega as configurações salvas
     this.loadSettings();
   },
   methods: {
-    loadSettings() {
-      // Aqui você faria uma requisição para obter as configurações salvas
-      // Exemplo com axios:
-      /*
-      axios.get('/api/settings')
-        .then(response => {
-          this.settings = response.data;
-        })
-        .catch(error => {
-          console.error('Erro ao carregar configurações:', error);
-        });
-      */
+    async loadSettings() {
+      this.isLoading = true;
+      try {
+        const response = await axios.get('/api/system-settings');
+        if (response.data.success) {
+          this.settings = response.data.settings;
+          this.showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+        this.showToast('Erro', 'Não foi possível carregar as configurações', 'error');
+      } finally {
+        this.isLoading = false;
+      }
     },
-    saveSettings() {
+    async saveSettings() {
       // Validação dos campos obrigatórios
       if (!this.settings.apiEndpoint) {
         this.showToast('Erro', 'O endpoint da API é obrigatório', 'error');
@@ -337,65 +353,83 @@ export default {
         return;
       }
 
-      // Aqui você faria uma requisição para salvar as configurações
-      // Exemplo com axios:
-      /*
-      axios.post('/api/settings', this.settings)
-        .then(response => {
+      this.isLoading = true;
+      try {
+        const response = await axios.post('/api/system-settings', this.settings);
+        
+        if (response.data.success) {
           this.showToast('Configurações Salvas', 'As configurações foram aplicadas com sucesso', 'success');
-        })
-        .catch(error => {
-          console.error('Erro ao salvar configurações:', error);
-          this.showToast('Erro', 'Falha ao salvar configurações', 'error');
-        });
-      */
-
-      // Simulação de sucesso
-      this.showToast('Configurações Salvas', 'As configurações foram aplicadas com sucesso', 'success');
+          // Atualiza as configurações locais com a resposta do servidor
+          this.settings = response.data.settings;
+        } else {
+          this.showToast('Erro', response.data.message || 'Falha ao salvar configurações', 'error');
+        }
+      } catch (error) {
+        console.error('Erro ao salvar configurações:', error);
+        
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          const errorMessage = Object.values(errors).flat().join(', ');
+          this.showToast('Erro de Validação', errorMessage, 'error');
+        } else {
+          this.showToast('Erro', 'Falha ao salvar configurações. Tente novamente.', 'error');
+        }
+      } finally {
+        this.isLoading = false;
+      }
     },
-    resetSettings() {
+    async resetSettings() {
       this.showConfirmModal(
         'Tem certeza que deseja restaurar as configurações padrão? Todas as configurações personalizadas serão perdidas.',
-        () => {
-          this.settings = {
-            apiEndpoint: "http://127.0.0.1:8000/api/videos",
-            apiKey: "",
-            syncInterval: "30",
-            defaultMonitor: "principal",
-            alwaysOnTop: true,
-            autoCloseDelay: "0",
-            startWithWindows: true,
-            showInSystemTray: true,
-            enableNotifications: true,
-            cacheLocation: "C:\\VideoScheduler\\Cache",
-            maxCacheSize: "5",
-            autoCleanup: true,
-            logLevel: "info",
-            maxMemoryUsage: "200",
-            enableHardwareAcceleration: true,
-            preloadVideos: true,
-            enableAutoUpdate: true
-          };
-
-          this.showToast('Configurações Restauradas', 'As configurações padrão foram restauradas', 'success');
+        async () => {
+          this.isLoading = true;
+          try {
+            const response = await axios.post('/api/system-settings/restore-defaults');
+            
+            if (response.data.success) {
+              this.settings = response.data.settings;
+              this.showToast('Configurações Restauradas', 'As configurações padrão foram restauradas', 'success');
+            } else {
+              this.showToast('Erro', response.data.message || 'Falha ao restaurar configurações', 'error');
+            }
+          } catch (error) {
+            console.error('Erro ao restaurar configurações:', error);
+            this.showToast('Erro', 'Falha ao restaurar configurações. Tente novamente.', 'error');
+          } finally {
+            this.isLoading = false;
+          }
         }
       );
     },
-    testConnection() {
+    async testConnection() {
       if (!this.settings.apiEndpoint) {
         this.showToast('Erro', 'Informe o endpoint da API primeiro', 'error');
         return;
       }
 
-      // Simula teste de conexão
-      setTimeout(() => {
-        // Simula sucesso ou falha aleatória
-        if (Math.random() > 0.3) {
-          this.showToast('Conexão Bem-sucedida', 'API está respondendo normalmente', 'success');
+      this.isTestingConnection = true;
+      try {
+        const response = await axios.post('/api/system-settings/test-connection', {
+          apiEndpoint: this.settings.apiEndpoint,
+          apiKey: this.settings.apiKey
+        });
+        
+        if (response.data.success) {
+          this.showToast('Conexão Bem-sucedida', response.data.message, 'success');
         } else {
-          this.showToast('Erro de Conexão', 'Não foi possível conectar com a API. Verifique o endpoint e a chave de API.', 'error');
+          this.showToast('Erro de Conexão', response.data.message, 'error');
         }
-      }, 2000);
+      } catch (error) {
+        console.error('Erro ao testar conexão:', error);
+        
+        if (error.response?.data?.message) {
+          this.showToast('Erro de Conexão', error.response.data.message, 'error');
+        } else {
+          this.showToast('Erro', 'Falha ao testar conexão. Tente novamente.', 'error');
+        }
+      } finally {
+        this.isTestingConnection = false;
+      }
     },
     showConfirmModal(message, callback) {
       this.confirmMessage = message;
@@ -409,10 +443,62 @@ export default {
       this.confirmModal.hide();
     },
     showToast(title, message, type) {
-      // Implementação do toast pode ser feita com um componente Vue ou biblioteca como Toastification
-      console.log(`[${type}] ${title}: ${message}`);
-      // Exemplo com Toastification:
-      // this.$toast[type](message, { title });
+      // Implementação com Bootstrap Toast
+      const toastEl = document.createElement('div');
+      toastEl.className = `toast align-items-center text-bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.setAttribute('aria-live', 'assertive');
+      toastEl.setAttribute('aria-atomic', 'true');
+      
+      toastEl.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            <strong>${title}</strong><br>${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      
+      const toastContainer = document.getElementById('toastContainer') || this.createToastContainer();
+      toastContainer.appendChild(toastEl);
+      
+      const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+      toast.show();
+      
+      // Remove o toast após ser escondido
+      toastEl.addEventListener('hidden.bs.toast', () => {
+        toastEl.remove();
+      });
+    },
+    createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toastContainer';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      document.body.appendChild(container);
+      return container;
+    },
+    // Método para limpar cache manualmente
+    async clearCache() {
+      this.showConfirmModal(
+        'Tem certeza que deseja limpar todo o cache? Todos os vídeos baixados serão removidos.',
+        async () => {
+          this.isLoading = true;
+          try {
+            // Aqui você implementaria a lógica para limpar o cache
+            // Exemplo: await axios.post('/api/system-settings/clear-cache');
+            
+            // Simulação
+            setTimeout(() => {
+              this.showToast('Cache Limpo', 'Todo o cache foi removido com sucesso', 'success');
+              this.isLoading = false;
+            }, 1500);
+          } catch (error) {
+            console.error('Erro ao limpar cache:', error);
+            this.showToast('Erro', 'Falha ao limpar cache. Tente novamente.', 'error');
+            this.isLoading = false;
+          }
+        }
+      );
     }
   }
 };

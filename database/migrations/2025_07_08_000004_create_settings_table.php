@@ -28,6 +28,9 @@ return new class extends Migration
             $table->integer('max_memory_usage');
             $table->boolean('enable_hardware_acceleration')->default(true);
             $table->boolean('preload_videos')->default(true);
+            $table->string('api_endpoint')->default(url('/api/videos'));
+            $table->string('api_key')->nullable();
+            $table->unsignedInteger('sync_interval')->default(30);
             $table->timestamps();
         });
     }

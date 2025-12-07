@@ -84,9 +84,9 @@
                 </div>
 
         </div>
-
+<!--
         <div class="row g-4">
-            <!-- Recent Activity -->
+            Recent Activity --
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header">
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <!-- Upcoming Schedules -->
+             Upcoming Schedules
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header">
@@ -233,7 +233,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>        -->
     </div>
 
 </template>
