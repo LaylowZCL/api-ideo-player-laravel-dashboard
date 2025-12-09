@@ -11,10 +11,12 @@ use App\Models\Schedule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use App\Models\VideoReport;
-use App\Models\Log;
+// use App\Models\Log;
+use Illuminate\Support\Facades\Log;
 
 class ClientAppController extends Controller
 {
+
     public function schedules(): JsonResponse
     {
         // Mapeamento dos dias da semana de inglês para português
@@ -68,18 +70,22 @@ class ClientAppController extends Controller
     {
         // Validar entrada
         $validator = Validator::make($request->all(), [
-            'video_id' => 'required|string',
+            'video_id' => 'nullable',
             'video_title' => 'nullable|string|max:255',
-            'event_type' => 'required|string|in:popup_opened,playback_started,playback_paused,playback_resumed,playback_completed,playback_25_percent,playback_50_percent,playback_75_percent,user_closed,window_loaded,video_loaded,autoplay_blocked,popup_minimized,video_completed',
+            'event_type' => 'string|in:popup_opened,playback_started,playback_paused,playback_resumed,video_completed,user_closed,video_interrupted,autoplay_started,autoplay_blocked,window_closed_after_completion,window_loaded,video_loaded,playback_25_percent,playback_50_percent,playback_75_percent,window_closed_after_completion',
             'playback_position' => 'nullable|numeric|min:0',
             'playback_duration' => 'nullable|numeric|min:0',
+            'video_duration' => 'nullable|numeric|min:0',
             'device_info' => 'nullable|array',
             'device_info.user_agent' => 'nullable|string',
             'device_info.platform' => 'nullable|string',
             'device_info.app_version' => 'nullable|string',
-            'trigger_type' => 'nullable|string|in:scheduled,manual',
+            'trigger_type' => 'nullable|string|in:scheduled,manual,activate,manual-reload',
             'session_id' => 'nullable|string',
-            'timestamp' => 'nullable|date'
+            'timestamp' => 'nullable|date',
+            'completion_status' => 'nullable|string|in:unknown,completed,interrupted',
+            'interruption_reason' => 'nullable|string',
+            'completed_loop' => 'nullable|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -148,5 +154,32 @@ class ClientAppController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
+    }
+    
+    // Helper methods
+    private function detectPlatform($userAgent)
+    {
+        if (stripos($userAgent, 'win') !== false) return 'windows';
+        if (stripos($userAgent, 'mac') !== false) return 'mac';
+        if (stripos($userAgent, 'linux') !== false) return 'linux';
+        return 'unknown';
+    }
+
+    private function generateSessionId()
+    {
+        return md5(uniqid(mt_rand(), true) . microtime(true));
+    }
+
+    private function updateVideoCompletionStats($videoId)
+    {
+        // Aqui você pode atualizar estatísticas na tabela de vídeos
+        // Por exemplo, incrementar um contador de visualizações completas
+        // Se você tiver um modelo Video:
+        
+        // if ($video = \App\Models\Video::find($videoId)) {
+        //     $video->increment('completed_views');
+        //     $video->last_viewed_at = now();
+        //     $video->save();
+        // }
     }
 }

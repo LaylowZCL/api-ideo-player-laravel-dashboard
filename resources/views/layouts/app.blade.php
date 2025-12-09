@@ -58,6 +58,10 @@
                         <span>Logs</span>
                     </a>
                     --}}
+                    <a href="{{ route('logs') }}" class="nav-btn {{ request()->routeIs('logs') ? 'active' : '' }}">
+                        <i class="bi bi-activity"></i>
+                        <span>Usuários</span>
+                    </a>
                     <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i>
                         <span>Configurações</span>

@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Validator;
 
 class SystemSettingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     /**
      * Obtém as configurações atuais do sistema
      */
