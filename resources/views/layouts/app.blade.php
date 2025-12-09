@@ -12,6 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{{ asset('assets/css/dashboard.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     @vite(['resources/js/app.js'])
 
@@ -23,12 +24,12 @@
         <div class="sidebar bg-dark border-end border-secondary" id="sidebar">
             <div class="p-3 border-bottom border-secondary">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="bg-primary rounded-2 p-2">
-                        <i class="bi bi-clock text-white fs-6"></i>
+                    <div class="rounded-2 p-2" style="background-color:#ffffff !important; width:70px;">
+                        <img src="{{ asset('assets/images/logo-bm.png') }}" style="width:100%">
                     </div>
                     <div>
-                        <h6 class="mb-0 text-white">VideoScheduler</h6>
-                        <small class="text-muted">Mostrando 6 de 6 registros</small>
+                        <h6 class="mb-0 text-white">Video Scheduler</h6>
+                        <small class="text-muted">BY ZK</small>
                     </div>
                 </div>
             </div>

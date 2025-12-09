@@ -1,5 +1,12 @@
 import './bootstrap';
 import { createApp } from 'vue';
+import axios from 'axios';
+
+// Configurar Axios
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+
+
 
 // Import components
 import DashboardPage from './components/DashboardPage.vue';
@@ -11,6 +18,9 @@ import SettingsPage from './components/SettingsPage.vue';
 
 // Create Vue app
 const app = createApp({});
+
+// Adicionar Axios ao Vue prototype
+app.config.globalProperties.$http = axios;
 
 // Register components globally
 app.component('dashboardpage', DashboardPage);

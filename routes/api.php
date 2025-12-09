@@ -9,6 +9,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\VideoReportController;
 use App\Http\Controllers\ClientAppController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,7 @@ Route::get('/health', function () {
 | ou componentes Vue. Não usar api.auth aqui.
 |--------------------------------------------------------------------------
 */
+Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData']);
 
 // ==== VIDEOS ====
 Route::prefix('videos')->group(function () {
@@ -56,11 +58,16 @@ Route::prefix('videos')->group(function () {
 
 // ==== SCHEDULES ====
 Route::prefix('schedules')->group(function () {
-    Route::get('/', [ScheduleController::class, 'index']);
-    Route::post('/', [ScheduleController::class, 'store']);
-    Route::delete('/{id}', [ScheduleController::class, 'destroy']);
-    Route::put('/{id}/status', [ScheduleController::class, 'toggleStatus']);
-    Route::post('/{id}/duplicate', [ScheduleController::class, 'duplicate']);
+    Route::get('/', [ScheduleController::class, 'index']); // Listar todos
+    Route::get('/videos', [ScheduleController::class, 'getVideosForDropdown']); // Vídeos para dropdown
+    Route::get('/today', [ScheduleController::class, 'scheduledVideosToday']); // Agendamentos de hoje
+    Route::get('/player', [ScheduleController::class, 'getScheduleForPlayer']); // Para player externo
+    
+    Route::post('/', [ScheduleController::class, 'store']); // Criar
+    Route::put('/{id}', [ScheduleController::class, 'update']); // Atualizar
+    Route::post('/{id}/toggle', [ScheduleController::class, 'toggleStatus']); // Alternar status
+    Route::post('/{id}/duplicate', [ScheduleController::class, 'duplicate']); // Duplicar
+    Route::delete('/{id}', [ScheduleController::class, 'destroy']); // Excluir
 });
 
 // ==== SETTINGS ====
@@ -77,6 +84,11 @@ Route::prefix('system-settings')->group(function () {
     Route::post('/restore-defaults', [SystemSettingController::class, 'restoreDefaults']);
     Route::get('/history', [SystemSettingController::class, 'history']);
     Route::get('/export', [SystemSettingController::class, 'export']);
+});
+
+// Em routes/api.php
+Route::get('/health', function() {
+    return response()->json(['status' => 'online', 'timestamp' => now()]);
 });
 
 

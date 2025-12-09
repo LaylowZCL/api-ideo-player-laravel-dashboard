@@ -1,16 +1,16 @@
 :root {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-muted: #334155;
-    --text-primary: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-color: #475569;
-    --primary-color: #22c55e;
-    --primary-hover: #16a34a;
-    --success-color: #22c55e;
+    --bg-primary: #002f61;
+    --bg-secondary: #023d7c;
+    --bg-muted: #00346c;
+    --text-primary: #ffedd2;
+    --text-muted: #a7a29b;
+    --border-color: #001020;
+    --primary-color: #ba9a6a;
+    --primary-hover: #f2a838;
+    --success-color: #ba9a6a;
     --warning-color: #eab308;
     --danger-color: #ef4444;
-    --info-color: #3b82f6;
+    --info-color: #0c6360;
 }
 
 body {

@@ -31,8 +31,8 @@ Route::get('/', function () {
 });
 
 Auth::routes();
-
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+Route::get('/api/dashboard', [DashboardController::class, 'dashboard']);
 Route::get('/video', [VideoController::class, 'goToVideos'])->name('videos');
 Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->name('schedule');
 Route::get('/logs', [LogController::class, 'goToLogs'])->name('logs');

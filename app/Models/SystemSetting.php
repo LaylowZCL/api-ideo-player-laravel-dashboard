@@ -51,7 +51,7 @@ class SystemSetting extends Model
 
     protected $attributes = [
         // Valores padrão baseados no seu código
-        'api_endpoint' => 'http://127.0.0.1:8000/api/videos',
+        'api_endpoint' => 'https://dev.fernandozucula.com/api/videos',
         'sync_interval' => 30,
         'default_monitor' => 'principal',
         'auto_close_delay' => 0,
@@ -115,7 +115,7 @@ class SystemSetting extends Model
     public static function fromVueFormat(array $vueData)
     {
         return [
-            'api_endpoint' => $vueData['apiEndpoint'] ?? 'http://127.0.0.1:8000/api/videos',
+            'api_endpoint' => $vueData['apiEndpoint'] ?? 'https://dev.fernandozucula.com/api/videos',
             'api_key' => $vueData['apiKey'] ?? '',
             'sync_interval' => $vueData['syncInterval'] ?? 30,
             

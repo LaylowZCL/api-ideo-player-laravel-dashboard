@@ -11,8 +11,7 @@ use Illuminate\Support\Facades\URL;
 
 class VideoController extends Controller
 {
-    // private $apiBaseUrl = 'https://dev.fernandozucula.com/api/v1';
-    private $apiBaseUrl = 'http://127.0.0.1:8000/api';
+    private $apiBaseUrl = 'https://dev.fernandozucula.com/api';
 
     public function __construct()
     {
