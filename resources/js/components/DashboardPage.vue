@@ -375,6 +375,14 @@ export default {
                 // URL correta - ajuste conforme sua configuração
                 const response = await this.$http.get('/api/dashboard/data');
 
+                /*/ Adicione este header para identificar que é uma requisição do Vue
+                const response = await this.$http.get('/api/dashboard/data', {
+                    headers: {
+                        'X-Request-Source': 'Vue-Component',
+                        'Accept': 'application/json'
+                    }
+                });*/
+
                 //console.log(response)
                 
                 if (response.data.success) {

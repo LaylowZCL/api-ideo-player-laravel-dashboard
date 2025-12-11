@@ -13,7 +13,11 @@ class ScheduleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // Apenas a view precisa de autenticação web
+        $this->middleware('auth')->only(['goToSchedule']);
+        
+        // Todos os métodos API usam verificação interna
+        $this->middleware('internal.api')->except(['goToSchedule']);
     }
 
     public function goToSchedule()
@@ -65,7 +69,7 @@ class ScheduleController extends Controller
         ];
 
         $diaAtual = $diasDaSemana[now()->format('l')];
-        
+
         $schedules = Schedule::with('video')
             ->where('active', true)
             ->whereJsonContains('days', $diaAtual)

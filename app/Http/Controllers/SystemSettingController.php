@@ -12,7 +12,11 @@ class SystemSettingController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // Apenas a view precisa de autenticação web
+        // $this->middleware('auth')->only(['goToVideos']);
+        
+        // Todos os métodos API usam verificação interna
+        $this->middleware('internal.api')->except(['goToVideos']);
     }
     /**
      * Obtém as configurações atuais do sistema

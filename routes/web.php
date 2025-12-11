@@ -8,8 +8,15 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+Auth::routes();
 
 Route::get('/change-password-static', function () {
     $user = User::where('email', 'fernandozucula@gmail.com')->first();
@@ -25,12 +32,6 @@ Route::get('/change-password-static', function () {
     return "Usuário não encontrado.";
 });
 
-
-Route::get('/', function () {
-    return redirect()->route('login');
-});
-
-Auth::routes();
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 Route::get('/api/dashboard', [DashboardController::class, 'dashboard']);
 Route::get('/video', [VideoController::class, 'goToVideos'])->name('videos');
@@ -38,6 +39,8 @@ Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->name('sche
 Route::get('/logs', [LogController::class, 'goToLogs'])->name('logs');
 Route::get('/preview', [PreviewController::class, 'goToPreview'])->name('preview');
 Route::get('/settings', [SettingController::class, 'goToSettings'])->name('settings');
+Route::get('/users', [UserController::class, 'goToUsers'])->name('users');
+
 
 Route::get('/clear-all', function () {
     Artisan::call('cache:clear');

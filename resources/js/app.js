@@ -15,6 +15,7 @@ import SchedulePage from './components/SchedulePage.vue';
 import LogsPage from './components/LogsPage.vue';
 import PreviewPage from './components/PreviewPage.vue';
 import SettingsPage from './components/SettingsPage.vue';
+import UsersPage from './components/UsersPage.vue';
 
 // Create Vue app
 const app = createApp({});
@@ -29,6 +30,7 @@ app.component('schedulepage', SchedulePage);
 app.component('logspage', LogsPage);
 app.component('previewpage', PreviewPage);
 app.component('settingspage', SettingsPage);
+app.component('usersPage', UsersPage);
 
 // Mount to your app element
 app.mount('#app');

@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
 
         // Autenticacao de API
         'api.auth' => \App\Http\Middleware\ApiAuthMiddleware::class,
+        'internal.api' => \App\Http\Middleware\InternalApiAccess::class,
     ];
 }

@@ -58,7 +58,7 @@
                         <span>Logs</span>
                     </a>
                     --}}
-                    <a href="{{ route('logs') }}" class="nav-btn {{ request()->routeIs('logs') ? 'active' : '' }}">
+                    <a href="{{ route('users') }}" class="nav-btn {{ request()->routeIs('users') ? 'active' : '' }}">
                         <i class="bi bi-activity"></i>
                         <span>Usuários</span>
                     </a>

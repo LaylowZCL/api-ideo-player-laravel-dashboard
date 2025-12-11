@@ -10,6 +10,7 @@ use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\VideoReportController;
 use App\Http\Controllers\ClientAppController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,14 @@ Route::prefix('schedules')->group(function () {
     Route::post('/{id}/toggle', [ScheduleController::class, 'toggleStatus']); // Alternar status
     Route::post('/{id}/duplicate', [ScheduleController::class, 'duplicate']); // Duplicar
     Route::delete('/{id}', [ScheduleController::class, 'destroy']); // Excluir
+});
+
+// routes/api.php (dentro do grupo interno se tiver)
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::put('/{id}', [UserController::class, 'update']);
+    Route::delete('/{id}', [UserController::class, 'destroy']);
 });
 
 // ==== SETTINGS ====

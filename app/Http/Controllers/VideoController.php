@@ -15,7 +15,11 @@ class VideoController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth');
+        // Apenas a view precisa de autenticação web
+        $this->middleware('auth')->only(['goToVideos']);
+        
+        // Todos os métodos API usam verificação interna
+        $this->middleware('internal.api')->except(['goToVideos']);
     }
 
     public function goToVideos()
