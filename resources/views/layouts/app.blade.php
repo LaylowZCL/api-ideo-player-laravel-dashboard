@@ -17,6 +17,13 @@
     @vite(['resources/js/app.js'])
 
     @stack('styles')
+
+    <style>
+        .sair:hover {
+            color: #fff !important;
+        }
+
+    </style>
 </head>
 <body class="bg-dark text-light">
     <div class="d-flex min-vh-100">
@@ -29,7 +36,7 @@
                     </div>
                     <div>
                         <h6 class="mb-0 text-white">Video Scheduler</h6>
-                        <small class="text-muted">BY ZK</small>
+                        <small class="text-muted">by: Ideias</small>
                     </div>
                 </div>
             </div>
@@ -62,10 +69,12 @@
                         <i class="bi bi-activity"></i>
                         <span>Usuários</span>
                     </a>
+                    {{--
                     <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i>
                         <span>Configurações</span>
                     </a>
+                    --}}
                 </div>
             </nav>
 
@@ -77,6 +86,33 @@
                         <div class="text-muted" style="font-size: 0.75rem;">Online • 2h 34m</div>
                     </div>
                 </div>
+            </div>
+
+
+            <div class="p-3 border-top border-secondary">
+                <div class="d-flex align-items-center gap-3 p-3 bg-secondary rounded">
+                    <div>
+                        <div class="small fw-medium">
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                    @csrf
+                </form>
+                <button type="button" class="btn btn-link sair" style="
+    color: #eab308 !important;
+    font-size: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+"
+                    onclick="event.preventDefault(); 
+                    document.getElementById('logout-form').submit();">
+                        Sair
+                </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="l" style="position: absolute; bottom: 20px; width: 100%;">
+                
             </div>
         </div>
 

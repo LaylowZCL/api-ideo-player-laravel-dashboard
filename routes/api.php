@@ -101,14 +101,20 @@ Route::get('/health', function() {
 });
 
 
-/*
-|--------------------------------------------------------------------------
-| Protected API (Electron App)
-|--------------------------------------------------------------------------
-| **IMPORTANTE:** Estas rotas continuam exactamente juntas, como pediste.
-| A app Electron consome apenas estas e precisam de segurança dedicada.
-|--------------------------------------------------------------------------
-*/
+// Monitoramento de clientes (simples)
+Route::prefix('client')->group(function () {
+    
+    // Estatísticas
+    Route::get('/stats', [ClientMonitorController::class, 'stats']);
+    
+    // Listar online
+    Route::get('/online', [ClientMonitorController::class, 'online']);
+});
+
+// Dashboard admin (protegido)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard']);
+});
 
 
 Route::middleware(['api.auth'])->group(function () {
@@ -120,4 +126,7 @@ Route::middleware(['api.auth'])->group(function () {
 
     // Reports (Electron)
     Route::post('/videos/report', [ClientAppController::class, 'storeReport']);
+
+    // Ping/heartbeat (chamado pela app Electron)
+    Route::post('/ping', [ClientMonitorController::class, 'ping']);
 });

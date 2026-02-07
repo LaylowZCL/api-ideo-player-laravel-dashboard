@@ -161,7 +161,7 @@ class DashboardController extends Controller
 
             // Relatórios recentes
             $recentReports = VideoReport::orderBy('viewed_at', 'desc')
-                ->take(5)
+                ->take(25)
                 ->get()
                 ->map(function($report) {
                     return [
