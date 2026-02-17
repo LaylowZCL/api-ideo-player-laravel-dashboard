@@ -6,20 +6,23 @@
           <h1 class="h2 mb-1">Gestão de Usuários</h1>
           <p class="text-muted mb-0">Gerencie os usuários do sistema</p>
         </div>
-        <button class="btn btn-primary" @click="toggleUserForm" v-if="canCreateUser">
+        <button class="btn btn-primary" @click="openCreateUserModal" v-if="canCreateUser">
           <i class="bi bi-plus me-1"></i>
           Novo Usuário
         </button>
       </div>
     </div>
 
-    <!-- Formulário de Novo Usuário -->
-    <div id="user-form" class="card mb-4" v-show="showForm">
-      <div class="card-header">
-        <h5 class="card-title mb-0">{{ editingUser ? 'Editar Usuário' : 'Criar Novo Usuário' }}</h5>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="editingUser ? updateUser() : createUser()">
+    <!-- Modal de Usuário -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingUser ? 'Editar Usuário' : 'Criar Novo Usuário' }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" @click="cancelForm"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="editingUser ? updateUser() : createUser()">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="user-name" class="form-label">Nome *</label>
@@ -93,7 +96,9 @@
               </button>
             </div>
           </div>
-        </form>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -173,14 +178,15 @@
                   Criado em {{ user.created_at }}
                 </div>
               </div>
-              <div class="d-flex align-items-center gap-2" v-if="user.id !== currentUser.id">
+              <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-outline-secondary btn-sm" 
                         @click="editUser(user)"
-                        :disabled="canEditUser(user)"
+                        :disabled="!canEditUser(user)"
                         :title="canEditUser(user) ? 'Editar' : 'Sem permissão para editar'">
                   <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-outline-danger btn-sm" 
+                        v-if="user.id !== currentUser.id"
                         @click="deleteUser(user)"
                         :disabled="!canDeleteUser(user)"
                         :title="canDeleteUser(user) ? 'Excluir' : 'Sem permissão para excluir'">
@@ -237,7 +243,6 @@ export default {
   name: 'UsersPage',
   data() {
     return {
-      showForm: false,
       editingUser: null,
       loading: false,
       users: [],
@@ -260,6 +265,7 @@ export default {
       },
       
       // Modal
+      userModal: null,
       confirmMessage: '',
       confirmCallback: null,
       confirmModal: null,
@@ -286,6 +292,7 @@ export default {
     }
   },
   mounted() {
+    this.userModal = new Modal(document.getElementById('userModal'));
     this.confirmModal = new Modal(document.getElementById('confirmModal'));
     this.toast = new Toast(document.getElementById('toast'));
     this.loadCurrentUser();
@@ -295,13 +302,14 @@ export default {
     async loadCurrentUser() {
       try {
         // Carrega informações do usuário atual
-        const response = await axios.get('/api/user');
+        const response = await axios.get('/api/current-user');
         this.currentUser = {
           id: response.data.id,
           user_type: response.data.user_type || 'user'
         };
       } catch (error) {
         console.error('Erro ao carregar usuário atual:', error);
+        this.showToast('Erro', 'Não foi possível carregar o usuário atual', 'error', 'bi-exclamation-triangle');
       }
     },
     
@@ -331,8 +339,8 @@ export default {
     },
     
     canEditUser(user) {
-      // Não pode editar a si mesmo
-      if (user.id === this.currentUser.id) return false;
+      // Pode editar a si mesmo (sem trocar tipo)
+      if (user.id === this.currentUser.id) return true;
       
       // Admin pode editar todos
       if (this.currentUser.user_type === 'admin') return true;
@@ -364,11 +372,10 @@ export default {
       return false;
     },
     
-    toggleUserForm() {
-      this.showForm = !this.showForm;
-      if (!this.showForm) {
-        this.resetForm();
-      }
+    openCreateUserModal() {
+      this.editingUser = null;
+      this.resetForm();
+      this.userModal.show();
     },
     
     resetForm() {
@@ -383,12 +390,12 @@ export default {
     },
     
     cancelForm() {
-      this.showForm = false;
+      this.userModal.hide();
       this.resetForm();
     },
     
     editUser(user) {
-      if (this.canEditUser(user)) {
+      if (!this.canEditUser(user)) {
         this.showToast('Permissão Negada', 'Você não tem permissão para editar este usuário.', 'warning', 'bi-shield-exclamation');
         return;
       }
@@ -401,7 +408,7 @@ export default {
         password_confirmation: '',
         user_type: user.user_type
       };
-      this.showForm = true;
+      this.userModal.show();
     },
     
     async createUser() {
@@ -416,7 +423,7 @@ export default {
         if (response.data.success) {
           this.users.push(response.data.user);
           this.calculateStats();
-          this.showForm = false;
+          this.userModal.hide();
           this.resetForm();
           this.showToast('Sucesso', 'Usuário criado com sucesso', 'success', 'bi-check-circle');
         } else {
@@ -440,7 +447,7 @@ export default {
     },
     
     async updateUser() {
-      if (this.validateForm(true)) {
+      if (!this.validateForm(true)) {
         return;
       }
 
@@ -454,7 +461,7 @@ export default {
             this.users[index] = response.data.user;
           }
           this.calculateStats();
-          this.showForm = false;
+          this.userModal.hide();
           this.resetForm();
           this.showToast('Sucesso', 'Usuário atualizado com sucesso', 'success', 'bi-check-circle');
         } else {

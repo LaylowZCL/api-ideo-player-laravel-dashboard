@@ -165,7 +165,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="small">
                                     <i class="bi" :class="getPlatformIcon(platform.platform)"></i>
-                                    {{ platform.platform }}
+                                    {{ formatPlatformLabel(platform.platform) }}
                                 </span>
                                 <span class="badge bg-primary">{{ platform.count }}</span>
                             </div>
@@ -278,16 +278,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(report, index) in recentReports" :key="index">
+                                    <tr v-for="(report, index) in paginatedRecentReports" :key="index">
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-play-circle fs-5 text-primary"></i>
                                                 <span class="fw-medium">{{ report.video_title }}</span>
                                             </div>
                                         </td>
-                                        <td>{{ report.event_type }}</td>
+                                        <td>{{ formatEventTypeLabel(report.event_type) }}</td>
                                         <td>
-                                            <span class="badge bg-secondary">{{ report.platform }}</span>
+                                            <span class="badge bg-secondary">{{ formatPlatformLabel(report.platform) }}</span>
                                         </td>
                                         <td>{{ report.viewed_at }}</td>
                                         <td>{{ report.duration }}s</td>
@@ -310,6 +310,31 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        <div v-if="recentReports.length > reportsPerPage" class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                Mostrando {{ paginationStartItem }}-{{ paginationEndItem }} de {{ recentReports.length }}
+                            </small>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Paginação dos relatórios">
+                                <button class="btn btn-outline-secondary" @click="goToPreviousReportsPage" :disabled="reportsCurrentPage === 1">
+                                    Anterior
+                                </button>
+                                <button
+                                    v-for="page in reportsPageNumbers"
+                                    :key="page"
+                                    class="btn"
+                                    :class="page === reportsCurrentPage ? 'btn-primary' : 'btn-outline-secondary'"
+                                    @click="goToReportsPage(page)"
+                                >
+                                    {{ page }}
+                                </button>
+                                <button class="btn btn-outline-secondary disabled">
+                                    de {{ reportsTotalPages }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="goToNextReportsPage" :disabled="reportsCurrentPage === reportsTotalPages">
+                                    Próxima
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -336,6 +361,8 @@ export default {
                 platform_distribution: []
             },
             recentReports: [],
+            reportsCurrentPage: 1,
+            reportsPerPage: 10,
             
             // Estado
             isLoading: false,
@@ -348,6 +375,27 @@ export default {
         totalWeeklyViews() {
             if (!this.chartData.daily_views) return 0;
             return this.chartData.daily_views.reduce((total, day) => total + day.views, 0);
+        },
+        reportsTotalPages() {
+            return Math.max(1, Math.ceil(this.recentReports.length / this.reportsPerPage));
+        },
+        reportsPageNumbers() {
+            return Array.from({ length: this.reportsTotalPages }, (_, i) => i + 1);
+        },
+        paginatedRecentReports() {
+            const start = (this.reportsCurrentPage - 1) * this.reportsPerPage;
+            return this.recentReports.slice(start, start + this.reportsPerPage);
+        },
+        paginationStartItem() {
+            return ((this.reportsCurrentPage - 1) * this.reportsPerPage) + 1;
+        },
+        paginationEndItem() {
+            return Math.min(this.reportsCurrentPage * this.reportsPerPage, this.recentReports.length);
+        }
+    },
+    watch: {
+        recentReports() {
+            this.reportsCurrentPage = 1;
         }
     },
     mounted() {
@@ -569,6 +617,21 @@ export default {
             this.lastUpdate = new Date().toLocaleTimeString();
             this.hasData = true;
         },
+        goToPreviousReportsPage() {
+            if (this.reportsCurrentPage > 1) {
+                this.reportsCurrentPage--;
+            }
+        },
+        goToReportsPage(page) {
+            if (page >= 1 && page <= this.reportsTotalPages) {
+                this.reportsCurrentPage = page;
+            }
+        },
+        goToNextReportsPage() {
+            if (this.reportsCurrentPage < this.reportsTotalPages) {
+                this.reportsCurrentPage++;
+            }
+        },
         
         formatTime(dateTime) {
             if (!dateTime) return '';
@@ -617,14 +680,73 @@ export default {
         },
         
         getPlatformIcon(platform) {
+            const normalized = this.normalizePlatform(platform);
             const icons = {
-                'Windows': 'bi-windows',
-                'macOS': 'bi-apple',
-                'Linux': 'bi-ubuntu',
-                'Android': 'bi-android',
-                'iOS': 'bi-phone'
+                windows: 'bi-windows',
+                macos: 'bi-apple',
+                linux: 'bi-ubuntu',
+                android: 'bi-android',
+                ios: 'bi-phone'
             };
-            return icons[platform] || 'bi-laptop';
+            return icons[normalized] || 'bi-laptop';
+        },
+
+        formatPlatformLabel(platform) {
+            const normalized = this.normalizePlatform(platform);
+            const labels = {
+                windows: 'Windows',
+                macos: 'macOS',
+                linux: 'Linux',
+                android: 'Android',
+                ios: 'iOS',
+                unknown: 'Desconhecido'
+            };
+
+            return labels[normalized] || platform || 'Desconhecido';
+        },
+
+        normalizePlatform(platform) {
+            const value = String(platform || '').toLowerCase();
+
+            if (value.includes('win32') || value.includes('win64') || value.includes('windows')) return 'windows';
+            if (value.includes('darwin') || value.includes('mac') || value.includes('osx') || value.includes('macos')) return 'macos';
+            if (value.includes('linux') || value.includes('ubuntu') || value.includes('debian') || value.includes('fedora')) return 'linux';
+            if (value.includes('android')) return 'android';
+            if (value.includes('ios') || value.includes('iphone') || value.includes('ipad')) return 'ios';
+            if (!value || value === 'desconhecido' || value === 'unknown') return 'unknown';
+
+            return value;
+        },
+        
+        formatEventTypeLabel(eventType) {
+            if (!eventType) return 'Evento';
+
+            const labels = {
+                popup_opened: 'Popup aberto',
+                playback_started: 'Reprodução iniciada',
+                playback_paused: 'Reprodução pausada',
+                playback_resumed: 'Reprodução retomada',
+                playback_completed: 'Reprodução concluída',
+                playback_error: 'Erro na reprodução',
+                video_loaded: 'Vídeo carregado',
+                video_completed: 'Vídeo concluído',
+                video_interrupted: 'Vídeo interrompido',
+                user_closed: 'Fechado pelo usuário',
+                window_loaded: 'Janela carregada',
+                autoplay_blocked: 'Reprodução automática bloqueada',
+                popup_minimized: 'Popup minimizado'
+            };
+
+            if (labels[eventType]) {
+                return labels[eventType];
+            }
+
+            if (!eventType.includes('_')) {
+                return eventType;
+            }
+
+            const normalized = eventType.replace(/_/g, ' ');
+            return normalized.charAt(0).toUpperCase() + normalized.slice(1);
         },
         
         getTimeUntil(time) {

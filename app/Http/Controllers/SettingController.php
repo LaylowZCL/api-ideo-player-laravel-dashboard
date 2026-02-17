@@ -16,7 +16,7 @@ class SettingController extends Controller
     public function goToSettings()
     {
         $settings = Setting::first() ?? new Setting([
-            'api_endpoint' => 'https://dev.fernandozucula.com/api/videos',
+            'api_endpoint' => config('services.video_api.endpoint'),
             'api_key' => '',
             'sync_interval' => 30,
             'default_monitor' => 'principal',
@@ -87,7 +87,7 @@ class SettingController extends Controller
     private function createDefaultSettings()
     {
         return Setting::create([
-            'api_endpoint' => "https://dev.fernandozucula.com/api/videos",
+            'api_endpoint' => config('services.video_api.endpoint'),
             'api_key' => "",
             'sync_interval' => 30,
             'default_monitor' => "principal",
@@ -132,7 +132,7 @@ class SettingController extends Controller
     {
         $settings = Setting::first() ?? new Setting();
         $settings->fill([
-            'api_endpoint' => 'https://dev.fernandozucula.com/api/videos',
+            'api_endpoint' => config('services.video_api.endpoint'),
             'api_key' => '',
             'sync_interval' => 30,
             'default_monitor' => 'principal',

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\VideoController;
@@ -9,28 +10,44 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use App\Http\Controllers\SystemSettingController;
+use App\Http\Controllers\VideoReportController;
+use App\Http\Controllers\ClientMonitorController;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Auth::routes();
+Route::get('/documentacao', function () {
+    return view('docs.index');
+})->name('docs.index');
 
-Route::get('/change-password-static', function () {
-    $user = User::where('email', 'fernandozucula@gmail.com')->first();
+Route::get('/documentacao/manuais/{slug}', function (string $slug) {
+    return redirect()->route('docs.page', ['slug' => $slug]);
+})->name('docs.legacy.manual');
 
-    if ($user) {
-        // Mudar a senha para uma nova senha (exemplo: 'novaSenha123')
-        $user->password = Hash::make('20002004');
-        $user->save();
-
-        return "Senha alterada com sucesso!";
+Route::get('/documentacao/{slug}', function (string $slug) {
+    if (str_ends_with($slug, '.html')) {
+        $slug = substr($slug, 0, -5);
     }
 
-    return "Usuário não encontrado.";
-});
+    $pages = [
+        'manual-solucao-mista' => 'docs.manuais.manual-solucao-mista',
+        'manual-api' => 'docs.manuais.manual-api',
+        'manual-dashboard-web' => 'docs.manuais.manual-dashboard-web',
+        'manual-aplicacao-desktop' => 'docs.manuais.manual-app-electron',
+        'manual-app-electron' => 'docs.manuais.manual-app-electron',
+        'ficha-tecnica' => 'docs.manuais.ficha-tecnica',
+    ];
+
+    if (!isset($pages[$slug])) {
+        abort(404);
+    }
+
+    return view($pages[$slug]);
+})->name('docs.page');
+
+Auth::routes();
 
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 Route::get('/api/dashboard', [DashboardController::class, 'dashboard']);
@@ -41,11 +58,80 @@ Route::get('/preview', [PreviewController::class, 'goToPreview'])->name('preview
 Route::get('/settings', [SettingController::class, 'goToSettings'])->name('settings');
 Route::get('/users', [UserController::class, 'goToUsers'])->name('users');
 
+Route::middleware(['auth'])->prefix('api')->group(function () {
+    Route::get('/current-user', function (Request $request) {
+        $user = $request->user();
 
-Route::get('/clear-all', function () {
-    Artisan::call('cache:clear');
-    Artisan::call('config:clear');
-    Artisan::call('view:clear');
-    Artisan::call('route:clear');
-    return 'Todo cache foi limpo';
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'user_type' => $user->user_type ?? 'user',
+        ]);
+    });
+
+    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData']);
+
+    // ==== VIDEOS ====
+    Route::prefix('videos')->group(function () {
+        Route::get('/', [VideoController::class, 'index']);
+        Route::post('/upload', [VideoController::class, 'upload']);
+        Route::post('/preview', [VideoController::class, 'preview']);
+        Route::post('/sync', [VideoController::class, 'sync']);
+        Route::post('/{id}/download', [VideoController::class, 'download']);
+        Route::put('/{id}', [VideoController::class, 'update']);
+        Route::delete('/{id}/cache', [VideoController::class, 'removeFromCache']);
+        Route::delete('/{id}', [VideoController::class, 'destroy']);
+
+        // Reports (internos)
+        Route::get('/report/stats', [VideoReportController::class, 'stats']);
+        Route::get('/{videoId}/reports', [VideoReportController::class, 'videoReports']);
+    });
+
+    // ==== SCHEDULES ====
+    Route::prefix('schedules')->group(function () {
+        Route::get('/', [ScheduleController::class, 'index']); // Listar todos
+        Route::get('/videos', [ScheduleController::class, 'getVideosForDropdown']); // Vídeos para dropdown
+        Route::get('/today', [ScheduleController::class, 'scheduledVideosToday']); // Agendamentos de hoje
+        Route::get('/player', [ScheduleController::class, 'getScheduleForPlayer']); // Para player externo
+
+        Route::post('/', [ScheduleController::class, 'store']); // Criar
+        Route::put('/{id}', [ScheduleController::class, 'update']); // Atualizar
+        Route::post('/{id}/toggle', [ScheduleController::class, 'toggleStatus']); // Alternar status
+        Route::post('/{id}/duplicate', [ScheduleController::class, 'duplicate']); // Duplicar
+        Route::delete('/{id}', [ScheduleController::class, 'destroy']); // Excluir
+    });
+
+    // ==== USERS ====
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::post('/', [UserController::class, 'store']);
+        Route::put('/{id}', [UserController::class, 'update']);
+        Route::delete('/{id}', [UserController::class, 'destroy']);
+    });
+
+    // ==== SETTINGS ====
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingController::class, 'index']);
+        Route::post('/', [SettingController::class, 'store']);
+    });
+
+    // ==== SYSTEM SETTINGS ====
+    Route::prefix('system-settings')->group(function () {
+        Route::get('/', [SystemSettingController::class, 'index']);
+        Route::post('/', [SystemSettingController::class, 'store']);
+        Route::post('/test-connection', [SystemSettingController::class, 'testConnection']);
+        Route::post('/restore-defaults', [SystemSettingController::class, 'restoreDefaults']);
+        Route::get('/history', [SystemSettingController::class, 'history']);
+        Route::get('/export', [SystemSettingController::class, 'export']);
+    });
+
+    // Monitoramento de clientes (simples)
+    Route::prefix('client')->group(function () {
+        Route::get('/stats', [ClientMonitorController::class, 'stats']);
+        Route::get('/online', [ClientMonitorController::class, 'online']);
+    });
+
+    // Dashboard admin (protegido)
+    Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard']);
 });

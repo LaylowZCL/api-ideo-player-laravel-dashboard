@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('api_endpoint');
+            $table->string('api_endpoint')->default(url('/api/videos'));
             $table->string('api_key')->nullable();
-            $table->integer('sync_interval');
+            $table->unsignedInteger('sync_interval')->default(30);
             $table->string('default_monitor');
             $table->boolean('always_on_top')->default(true);
             $table->integer('auto_close_delay')->default(0);
@@ -28,9 +28,6 @@ return new class extends Migration
             $table->integer('max_memory_usage');
             $table->boolean('enable_hardware_acceleration')->default(true);
             $table->boolean('preload_videos')->default(true);
-            $table->string('api_endpoint')->default(url('/api/videos'));
-            $table->string('api_key')->nullable();
-            $table->unsignedInteger('sync_interval')->default(30);
             $table->timestamps();
         });
     }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SystemSetting;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class ApiAuthMiddleware
@@ -11,55 +13,55 @@ class ApiAuthMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        $validApiKey = config('app.api_key', 'VIDEO_POPUP_SECRET_2025');
-        $clientId = config('app.client_id', 'ELECTRON_VIDEO_PLAYER');
+        $defaultApiKey = config('app.api_key', 'VIDEO_POPUP_SECRET_2025');
+        $defaultClientId = config('app.client_id', 'ELECTRON_VIDEO_PLAYER');
         
-        $apiKey = $request->header('X-API-Key');
-        $client = $request->header('X-Client-ID');
+        $apiKey = $request->header('X-API-Key', $request->input('api_key'));
+        $client = $request->header('X-Client-ID', $request->input('client_id'));
+
+        $allowedApiKeys = array_values(array_filter([
+            $defaultApiKey,
+            optional(SystemSetting::orderByDesc('id')->first())->api_key,
+        ]));
+
+        $allowedClientIds = array_values(array_filter([
+            $defaultClientId,
+            'ELECTRON_VIDEO_PLAYER',
+            'ElectronClient',
+        ]));
         
-        if (!$apiKey || !$client) {
+        if (!$apiKey) {
             return response()->json([
                 'success' => false,
                 'message' => 'Authentication required',
-                'error' => 'Missing authentication headers'
+                'error' => 'Missing API key',
+                'hint' => 'Send X-API-Key header (or api_key param).'
             ], 401);
         }
         
-        if ($apiKey !== $validApiKey || $client !== $clientId) {
+        if (!in_array($apiKey, $allowedApiKeys, true)) {
+            Log::warning('API auth failed: invalid key', [
+                'path' => $request->path(),
+                'client_id' => $client,
+                'ip' => $request->ip(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Authentication failed',
-                'error' => 'Invalid API key or client ID'
+                'error' => 'Invalid API key'
             ], 403);
+        }
+
+        // Client-ID opcional para compatibilidade com clients antigos.
+        if ($client && !in_array($client, $allowedClientIds, true)) {
+            Log::warning('API auth warning: unknown client id', [
+                'client_id' => $client,
+                'path' => $request->path(),
+                'ip' => $request->ip(),
+            ]);
         }
         
         return $next($request);
-    }
-
-    public function schedules(): JsonResponse
-    {
-        // Mapeamento dos dias da semana de inglês para português
-        $diasDaSemana = [
-            'Sunday' => 'dom',
-            'Monday' => 'seg',
-            'Tuesday' => 'ter',
-            'Wednesday' => 'qua',
-            'Thursday' => 'qui',
-            'Friday' => 'sex',
-            'Saturday' => 'sab',
-        ];
-
-        // Obtém o nome do dia da semana atual em português
-        $diaAtual = $diasDaSemana[now()->format('l')];
-
-        // Obtém os horários agendados que estão ativos e no dia atual
-        $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
-
-        // Extraindo os horários dos objetos Schedule
-        $scheduleTimes = $schedules->pluck('time')->toArray();
-
-        return response()->json([
-            'schedule_times' => $scheduleTimes
-        ]);
     }
 }

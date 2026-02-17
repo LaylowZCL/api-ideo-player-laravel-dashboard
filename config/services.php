@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'video_api' => [
+        'base_url' => env('VIDEO_API_BASE_URL', 'http://127.0.0.1:8000/api'),
+        'endpoint' => env('VIDEO_API_ENDPOINT', 'http://127.0.0.1:8000/api/videos'),
+    ],
+
 ];

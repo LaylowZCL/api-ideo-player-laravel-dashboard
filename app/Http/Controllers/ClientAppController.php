@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\URL;
 use App\Models\Schedule;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use App\Models\VideoReport;
@@ -56,9 +57,28 @@ class ClientAppController extends Controller
         ];
 
         $diaAtual = $diasDaSemana[now()->format('l')];
-        $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
+        $schedules = Schedule::where('active', true)
+            ->whereJsonContains('days', $diaAtual)
+            ->orderBy('time')
+            ->get()
+            ->map(function ($schedule) {
+                $video = $this->resolveVideoForSchedule($schedule);
+                $resolvedUrl = $video?->url ?: $schedule->video_url;
 
-        $scheduledVideos = $schedules->pluck('video_url')->toArray();
+                return [
+                    'id' => $schedule->id,
+                    'title' => $schedule->title,
+                    'video_id' => $video?->id,
+                    'video_url' => $this->toSafeVideoUrl($resolvedUrl),
+                    'time' => $schedule->time,
+                    'days' => $schedule->days,
+                    'monitor' => $schedule->monitor,
+                    'active' => (bool) $schedule->active,
+                    'duration' => $video?->duration ?: ($schedule->duration ?: '0:00'),
+                    'created_at' => $schedule->created_at,
+                    'updated_at' => $schedule->updated_at,
+                ];
+            });
 
         return response()->json([
             'videos' => $schedules
@@ -72,7 +92,7 @@ class ClientAppController extends Controller
         $validator = Validator::make($request->all(), [
             'video_id' => 'nullable',
             'video_title' => 'nullable|string|max:255',
-            'event_type' => 'string|in:popup_opened,playback_started,playback_paused,playback_resumed,video_completed,user_closed,video_interrupted,autoplay_started,autoplay_blocked,window_closed_after_completion,window_loaded,video_loaded,playback_25_percent,playback_50_percent,playback_75_percent,window_closed_after_completion',
+            'event_type' => 'string|in:popup_opened,playback_started,playback_paused,playback_resumed,video_completed,playback_completed,playback_error,user_closed,video_interrupted,autoplay_started,autoplay_blocked,window_closed_after_completion,window_loaded,video_loaded,playback_25_percent,playback_50_percent,playback_75_percent',
             'playback_position' => 'nullable|numeric|min:0',
             'playback_duration' => 'nullable|numeric|min:0',
             'video_duration' => 'nullable|numeric|min:0',
@@ -108,8 +128,13 @@ class ClientAppController extends Controller
             $deviceInfo = $data['device_info'] ?? [];
             
             // Criar o report
+            $videoId = $data['video_id'] ?? null;
+            if ($videoId && !Video::whereKey($videoId)->exists()) {
+                $videoId = null;
+            }
+
             $report = VideoReport::create([
-                'video_id' => $data['video_id'],
+                'video_id' => $videoId,
                 'video_title' => $data['video_title'] ?? null,
                 'event_type' => $data['event_type'],
                 'event_data' => $data, // Salvar todos os dados originais
@@ -181,5 +206,60 @@ class ClientAppController extends Controller
         //     $video->last_viewed_at = now();
         //     $video->save();
         // }
+    }
+
+    private function resolveVideoForSchedule(Schedule $schedule): ?Video
+    {
+        if (Schema::hasColumn('schedules', 'video_id') && !empty($schedule->video_id)) {
+            $video = Video::find($schedule->video_id);
+            if ($video) {
+                return $video;
+            }
+        }
+
+        if (empty($schedule->video_url)) {
+            return null;
+        }
+
+        $path = parse_url($schedule->video_url, PHP_URL_PATH) ?: $schedule->video_url;
+        $basename = rawurldecode(basename($path));
+        $withoutTimestampPrefix = preg_replace('/^\d+_/', '', $basename);
+
+        return Video::query()
+            ->where('name', $basename)
+            ->orWhere('name', $withoutTimestampPrefix)
+            ->orWhere('url', 'like', '%/' . rawurlencode($basename))
+            ->orWhere('url', 'like', '%/' . rawurlencode($withoutTimestampPrefix))
+            ->orderByDesc('cached')
+            ->first();
+    }
+
+    private function toSafeVideoUrl(?string $url): ?string
+    {
+        if (empty($url)) {
+            return $url;
+        }
+
+        $parts = parse_url($url);
+        if (!$parts || empty($parts['scheme']) || empty($parts['host'])) {
+            return $url;
+        }
+
+        $segments = array_filter(explode('/', ltrim($parts['path'] ?? '', '/')), fn ($part) => $part !== '');
+        $safeSegments = array_map(function ($segment) {
+            return rawurlencode(rawurldecode($segment));
+        }, $segments);
+
+        $safePath = '/' . implode('/', $safeSegments);
+        $safeUrl = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '') . $safePath;
+
+        if (!empty($parts['query'])) {
+            $safeUrl .= '?' . $parts['query'];
+        }
+        if (!empty($parts['fragment'])) {
+            $safeUrl .= '#' . $parts['fragment'];
+        }
+
+        return $safeUrl;
     }
 }

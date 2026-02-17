@@ -6,20 +6,23 @@
           <h1 class="h2 mb-1">Agendamentos</h1>
           <p class="text-muted mb-0">Gerencie os horários de execução dos vídeos</p>
         </div>
-        <button class="btn btn-primary" @click="toggleScheduleForm">
+        <button class="btn btn-primary" @click="openCreateScheduleModal">
           <i class="bi bi-plus me-1"></i>
           Novo Agendamento
         </button>
       </div>
     </div>
 
-    <!-- Formulário de Novo Agendamento -->
-    <div id="schedule-form" class="card mb-4" v-show="showForm">
-      <div class="card-header">
-        <h5 class="card-title mb-0">{{ editingSchedule ? 'Editar Agendamento' : 'Criar Novo Agendamento' }}</h5>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="editingSchedule ? updateSchedule() : createSchedule()">
+    <!-- Modal de Agendamento -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingSchedule ? 'Editar Agendamento' : 'Criar Novo Agendamento' }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" @click="cancelForm"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="editingSchedule ? updateSchedule() : createSchedule()">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="schedule-title" class="form-label">Título *</label>
@@ -104,7 +107,9 @@
               </button>
             </div>
           </div>
-        </form>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -269,7 +274,6 @@ import { Modal, Toast } from 'bootstrap';
 export default {
   data() {
     return {
-      showForm: false,
       editingSchedule: null,
       loading: false,
       videos: [],
@@ -301,6 +305,7 @@ export default {
       currentDayName: '',
       
       // Modal
+      scheduleModal: null,
       confirmMessage: '',
       confirmCallback: null,
       confirmModal: null,
@@ -332,6 +337,7 @@ export default {
     }
   },
   mounted() {
+    this.scheduleModal = new Modal(document.getElementById('scheduleModal'));
     this.confirmModal = new Modal(document.getElementById('confirmModal'));
     this.toast = new Toast(document.getElementById('toast'));
     this.loadCurrentDay();
@@ -400,11 +406,10 @@ export default {
       }
     },
     
-    toggleScheduleForm() {
-      this.showForm = !this.showForm;
-      if (!this.showForm) {
-        this.resetForm();
-      }
+    openCreateScheduleModal() {
+      this.editingSchedule = null;
+      this.resetForm();
+      this.scheduleModal.show();
     },
     
     resetForm() {
@@ -420,7 +425,7 @@ export default {
     },
     
     cancelForm() {
-      this.showForm = false;
+      this.scheduleModal.hide();
       this.resetForm();
     },
     
@@ -443,7 +448,7 @@ export default {
         monitor: schedule.monitor,
         active: schedule.active
       };
-      this.showForm = true;
+      this.scheduleModal.show();
     },
     
     async createSchedule() {
@@ -458,7 +463,7 @@ export default {
         if (response.data.success) {
           this.schedules.push(response.data.schedule);
           this.calculateStats();
-          this.showForm = false;
+          this.scheduleModal.hide();
           this.resetForm();
           this.showToast('Sucesso', 'Agendamento criado com sucesso', 'success', 'bi-check-circle');
         } else {
@@ -487,7 +492,7 @@ export default {
             this.schedules[index] = response.data.schedule;
           }
           this.calculateStats();
-          this.showForm = false;
+          this.scheduleModal.hide();
           this.resetForm();
           this.showToast('Sucesso', 'Agendamento atualizado com sucesso', 'success', 'bi-check-circle');
         } else {

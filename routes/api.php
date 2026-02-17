@@ -3,14 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\VideoController;
-use App\Http\Controllers\ScheduleController;
-use App\Http\Controllers\SettingController;
-use App\Http\Controllers\SystemSettingController;
-use App\Http\Controllers\VideoReportController;
 use App\Http\Controllers\ClientAppController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClientMonitorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,91 +23,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 */
 Route::get('/health', function () {
     return response()->json(['status' => 'OK', 'service' => 'Video API']);
-});
-
-
-/*
-|--------------------------------------------------------------------------
-| Public/Internal API (Consumidas pelo Laravel + Vue)
-|--------------------------------------------------------------------------
-| Estas rotas são abertas para a interface web da aplicação, seja Laravel
-| ou componentes Vue. Não usar api.auth aqui.
-|--------------------------------------------------------------------------
-*/
-Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData']);
-
-// ==== VIDEOS ====
-Route::prefix('videos')->group(function () {
-    Route::get('/', [VideoController::class, 'index']);
-    Route::post('/upload', [VideoController::class, 'upload']);
-    Route::post('/preview', [VideoController::class, 'preview']);
-    Route::post('/sync', [VideoController::class, 'sync']);
-    Route::post('/{id}/download', [VideoController::class, 'download']);
-    Route::delete('/{id}/cache', [VideoController::class, 'removeFromCache']);
-    Route::delete('/{id}', [VideoController::class, 'destroy']);
-
-    // Reports (internos)
-    Route::get('/report/stats', [VideoReportController::class, 'stats']);
-    Route::get('/{videoId}/reports', [VideoReportController::class, 'videoReports']);
-});
-
-// ==== SCHEDULES ====
-Route::prefix('schedules')->group(function () {
-    Route::get('/', [ScheduleController::class, 'index']); // Listar todos
-    Route::get('/videos', [ScheduleController::class, 'getVideosForDropdown']); // Vídeos para dropdown
-    Route::get('/today', [ScheduleController::class, 'scheduledVideosToday']); // Agendamentos de hoje
-    Route::get('/player', [ScheduleController::class, 'getScheduleForPlayer']); // Para player externo
-    
-    Route::post('/', [ScheduleController::class, 'store']); // Criar
-    Route::put('/{id}', [ScheduleController::class, 'update']); // Atualizar
-    Route::post('/{id}/toggle', [ScheduleController::class, 'toggleStatus']); // Alternar status
-    Route::post('/{id}/duplicate', [ScheduleController::class, 'duplicate']); // Duplicar
-    Route::delete('/{id}', [ScheduleController::class, 'destroy']); // Excluir
-});
-
-// routes/api.php (dentro do grupo interno se tiver)
-Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
-    Route::post('/', [UserController::class, 'store']);
-    Route::put('/{id}', [UserController::class, 'update']);
-    Route::delete('/{id}', [UserController::class, 'destroy']);
-});
-
-// ==== SETTINGS ====
-Route::prefix('settings')->group(function () {
-    Route::get('/', [SettingController::class, 'index']);
-    Route::post('/', [SettingController::class, 'store']);
-});
-
-// ==== SYSTEM SETTINGS ====
-Route::prefix('system-settings')->group(function () {
-    Route::get('/', [SystemSettingController::class, 'index']);
-    Route::post('/', [SystemSettingController::class, 'store']);
-    Route::post('/test-connection', [SystemSettingController::class, 'testConnection']);
-    Route::post('/restore-defaults', [SystemSettingController::class, 'restoreDefaults']);
-    Route::get('/history', [SystemSettingController::class, 'history']);
-    Route::get('/export', [SystemSettingController::class, 'export']);
-});
-
-// Em routes/api.php
-Route::get('/health', function() {
-    return response()->json(['status' => 'online', 'timestamp' => now()]);
-});
-
-
-// Monitoramento de clientes (simples)
-Route::prefix('client')->group(function () {
-    
-    // Estatísticas
-    Route::get('/stats', [ClientMonitorController::class, 'stats']);
-    
-    // Listar online
-    Route::get('/online', [ClientMonitorController::class, 'online']);
-});
-
-// Dashboard admin (protegido)
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard']);
 });
 
 

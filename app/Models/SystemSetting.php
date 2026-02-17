@@ -51,7 +51,7 @@ class SystemSetting extends Model
 
     protected $attributes = [
         // Valores padrão baseados no seu código
-        'api_endpoint' => 'https://dev.fernandozucula.com/api/videos',
+        'api_endpoint' => null,
         'sync_interval' => 30,
         'default_monitor' => 'principal',
         'auto_close_delay' => 0,
@@ -74,7 +74,14 @@ class SystemSetting extends Model
         $settings = self::orderBy('created_at', 'desc')->first();
         
         if (!$settings) {
-            $settings = self::create([]);
+            $settings = self::create([
+                'api_endpoint' => config('services.video_api.endpoint'),
+            ]);
+        }
+
+        if (!$settings->api_endpoint) {
+            $settings->api_endpoint = config('services.video_api.endpoint');
+            $settings->save();
         }
         
         return $settings;
@@ -115,7 +122,7 @@ class SystemSetting extends Model
     public static function fromVueFormat(array $vueData)
     {
         return [
-            'api_endpoint' => $vueData['apiEndpoint'] ?? 'https://dev.fernandozucula.com/api/videos',
+            'api_endpoint' => $vueData['apiEndpoint'] ?? config('services.video_api.endpoint'),
             'api_key' => $vueData['apiKey'] ?? '',
             'sync_interval' => $vueData['syncInterval'] ?? 30,
             

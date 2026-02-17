@@ -34,7 +34,7 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label for="api-endpoint" class="form-label">Endpoint da API</label>
-                <input type="url" class="form-control" id="api-endpoint" v-model="settings.apiEndpoint" placeholder="https://dev.fernandozucula.com/api/videos">
+                <input type="url" class="form-control" id="api-endpoint" v-model="settings.apiEndpoint" :placeholder="defaultApiEndpoint">
               </div>
               <div class="col-md-6">
                 <label for="api-key" class="form-label">Chave da API</label>
@@ -273,9 +273,10 @@ import axios from 'axios';
 export default {
   data() {
     return {
+      defaultApiEndpoint: (window.APP_CONFIG && window.APP_CONFIG.apiEndpoint) ? window.APP_CONFIG.apiEndpoint : "http://127.0.0.1:8000/api/videos",
       settings: {
         // Configurações de API
-        apiEndpoint: "https://dev.fernandozucula.com/api/videos",
+        apiEndpoint: (window.APP_CONFIG && window.APP_CONFIG.apiEndpoint) ? window.APP_CONFIG.apiEndpoint : "",
         apiKey: "",
         syncInterval: "30",
         
@@ -503,4 +504,3 @@ export default {
   }
 };
 </script>
-

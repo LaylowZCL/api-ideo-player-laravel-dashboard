@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Preview;
+use App\Models\Video;
 use Illuminate\Http\Request;
 
 class PreviewController extends Controller
@@ -46,33 +47,33 @@ class PreviewController extends Controller
     }
 
     public function preview(Request $request)
-{
-    $request->validate([
-        'video_id' => 'required|exists:videos,id',
-        'monitor' => 'required|in:primary,secondary,all',
-        'width' => 'required|integer|min:100',
-        'height' => 'required|integer|min:100',
-        'always_on_top' => 'boolean',
-        'auto_close' => 'boolean'
-    ]);
-
-    try {
-        $video = Video::findOrFail($request->video_id);
-
-        // Aqui você implementaria a lógica real para exibir no monitor
-        // Esta é uma simulação:
-
-        return response()->json([
-            'success' => true,
-            'message' => "Vídeo '{$video->title}' enviado para o monitor {$request->monitor}",
-            'video' => $video
+    {
+        $request->validate([
+            'video_id' => 'required|exists:videos,id',
+            'monitor' => 'required|in:primary,secondary,all',
+            'width' => 'required|integer|min:100',
+            'height' => 'required|integer|min:100',
+            'always_on_top' => 'boolean',
+            'auto_close' => 'boolean'
         ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Erro ao exibir vídeo no monitor: ' . $e->getMessage()
-        ], 500);
+        try {
+            $video = Video::findOrFail($request->video_id);
+
+            // Aqui você implementaria a lógica real para exibir no monitor
+            // Esta é uma simulação:
+
+            return response()->json([
+                'success' => true,
+                'message' => "Vídeo '{$video->title}' enviado para o monitor {$request->monitor}",
+                'video' => $video
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao exibir vídeo no monitor: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
 }

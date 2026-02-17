@@ -6,6 +6,7 @@ use App\Models\Schedule;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
@@ -110,7 +111,7 @@ class ScheduleController extends Controller
                 'days' => is_string($schedule->days) ? json_decode($schedule->days, true) : $schedule->days,
                 'monitor' => $schedule->monitor,
                 'active' => $schedule->active,
-                'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
+                'duration' => $this->resolveScheduleDuration($schedule)
             ];
         });
 
@@ -175,12 +176,12 @@ class ScheduleController extends Controller
             $schedule = Schedule::create([
                 'title' => $request->title,
                 'video_url' => $video ? $video->url : $request->video_url,
-                'video_id' => $video ? $video->id : null,
                 'time' => $request->time,
                 'days' => $request->days,
                 'monitor' => $request->monitor,
-                'active' => $request->active ?? true
-            ]);
+                'active' => $request->active ?? true,
+                'duration' => $video ? $video->duration : '0:00',
+            ] + ($this->hasVideoIdColumn() ? ['video_id' => $video ? $video->id : null] : []));
 
             // Carregar relacionamento para resposta
             $schedule->load('video');
@@ -197,7 +198,7 @@ class ScheduleController extends Controller
                     'days' => $schedule->days,
                     'monitor' => $schedule->monitor,
                     'active' => $schedule->active,
-                    'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
+                    'duration' => $this->resolveScheduleDuration($schedule)
                 ]
             ]);
 
@@ -235,6 +236,8 @@ class ScheduleController extends Controller
         }
 
         try {
+            $updateData = $request->only(['title', 'time', 'days', 'monitor', 'active']);
+
             // Atualizar vídeo se necessário
             if ($request->has('video_url')) {
                 $video = Video::where('name', $request->video_url)
@@ -242,12 +245,14 @@ class ScheduleController extends Controller
                     ->orWhere('title', $request->video_url)
                     ->first();
 
-                $schedule->video_url = $video ? $video->url : $request->video_url;
-                $schedule->video_id = $video ? $video->id : null;
+                $updateData['video_url'] = $video ? $video->url : $request->video_url;
+                $updateData['duration'] = $video ? $video->duration : '0:00';
+
+                if ($this->hasVideoIdColumn()) {
+                    $updateData['video_id'] = $video ? $video->id : null;
+                }
             }
 
-            // Atualizar outros campos
-            $updateData = $request->only(['title', 'time', 'days', 'monitor', 'active']);
             $schedule->update($updateData);
 
             $schedule->load('video');
@@ -264,7 +269,7 @@ class ScheduleController extends Controller
                     'days' => $schedule->days,
                     'monitor' => $schedule->monitor,
                     'active' => $schedule->active,
-                    'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
+                    'duration' => $this->resolveScheduleDuration($schedule)
                 ]
             ]);
 
@@ -313,12 +318,12 @@ class ScheduleController extends Controller
             $schedule = Schedule::create([
                 'title' => $original->title . ' (Cópia)',
                 'video_url' => $original->video_url,
-                'video_id' => $original->video_id,
                 'time' => $original->time,
                 'days' => $original->days,
                 'monitor' => $original->monitor,
-                'active' => false
-            ]);
+                'active' => false,
+                'duration' => $original->duration ?? ($original->video ? $original->video->duration : '0:00'),
+            ] + ($this->hasVideoIdColumn() ? ['video_id' => $original->video_id] : []));
 
             $schedule->load('video');
 
@@ -334,7 +339,7 @@ class ScheduleController extends Controller
                     'days' => $schedule->days,
                     'monitor' => $schedule->monitor,
                     'active' => $schedule->active,
-                    'duration' => $schedule->video ? $schedule->video->duration : 'N/A'
+                    'duration' => $this->resolveScheduleDuration($schedule)
                 ]
             ]);
 
@@ -402,7 +407,7 @@ class ScheduleController extends Controller
                         asset('storage/' . $schedule->video->file_path) : 
                         $schedule->video_url,
                     'video_title' => $schedule->video ? $schedule->video->title : 'Vídeo',
-                    'duration' => $schedule->video ? $schedule->video->duration : '0:00',
+                    'duration' => $this->resolveScheduleDuration($schedule),
                     'monitor' => $schedule->monitor,
                     'is_cached' => $schedule->video ? $schedule->video->cached : false
                 ];
@@ -414,5 +419,23 @@ class ScheduleController extends Controller
             'current_time' => $currentTime,
             'today' => now()->format('d/m/Y')
         ]);
+    }
+
+    private function hasVideoIdColumn(): bool
+    {
+        return Schema::hasColumn('schedules', 'video_id');
+    }
+
+    private function resolveScheduleDuration(Schedule $schedule): string
+    {
+        if ($schedule->video && !empty($schedule->video->duration)) {
+            return $schedule->video->duration;
+        }
+
+        if (!empty($schedule->duration)) {
+            return $schedule->duration;
+        }
+
+        return '0:00';
     }
 }

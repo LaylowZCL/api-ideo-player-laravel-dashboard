@@ -7,7 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Schedule extends Model
 {
     protected $fillable = [
-        'title', 'video_url', 'time', 'days', 'monitor', 'active', 'duration'
+        'title',
+        'video_url',
+        'video_id',
+        'time',
+        'days',
+        'monitor',
+        'active',
+        'duration'
     ];
 
     protected $casts = [

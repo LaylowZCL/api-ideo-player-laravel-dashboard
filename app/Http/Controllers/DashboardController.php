@@ -404,11 +404,13 @@ class DashboardController extends Controller
                     'monitor' => $schedule->monitor,
                     'is_today' => $isToday,
                     'time_until' => $this->calculateTimeUntil($schedule->time, $isToday),
-                    'video' => $schedule->video ? [
-                        'duration' => $schedule->video->duration,
-                        'title' => $schedule->video->title,
-                        'cached' => $schedule->video->cached
-                    ] : null
+                    'video' => [
+                        'duration' => $schedule->video && !empty($schedule->video->duration)
+                            ? $schedule->video->duration
+                            : ($schedule->duration ?: '0:00'),
+                        'title' => $schedule->video ? $schedule->video->title : $schedule->title,
+                        'cached' => $schedule->video ? $schedule->video->cached : false
+                    ]
                 ];
             })->values()->toArray();
         

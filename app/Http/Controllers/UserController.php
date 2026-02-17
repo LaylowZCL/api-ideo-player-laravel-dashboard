@@ -137,25 +137,18 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $currentUser = auth()->user();
+        $isSelf = $user->id === $currentUser->id;
 
-        // Verifica permissão básica
-        if (!Gate::allows('isAdmin') && !Gate::allows('isManager')) {
+        // Verifica permissão básica (exceto autoedição)
+        if (!$isSelf && !Gate::allows('isAdmin') && !Gate::allows('isManager')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Você não tem permissão para editar usuários.'
             ], 403);
         }
 
-        // Não pode editar a si mesmo
-        if ($user->id === $currentUser->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Você não pode editar sua própria conta.'
-            ], 403);
-        }
-
         // Manager não pode editar admin
-        if ($user->user_type === 'admin' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
+        if (!$isSelf && $user->user_type === 'admin' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Você não tem permissão para editar administradores.'
@@ -175,7 +168,12 @@ class UserController extends Controller
             'user_type' => [
                 'sometimes',
                 Rule::in(['user', 'manager', 'admin']),
-                function ($attribute, $value, $fail) use ($user, $currentUser) {
+                function ($attribute, $value, $fail) use ($user, $currentUser, $isSelf) {
+                    if ($isSelf) {
+                        $fail('Você não pode alterar seu próprio tipo de usuário.');
+                        return;
+                    }
+
                     // Manager não pode promover para admin
                     if (Gate::allows('isManager') && !Gate::allows('isAdmin') && $value === 'admin') {
                         $fail('Você não tem permissão para promover para administrador.');
@@ -225,6 +223,13 @@ class UserController extends Controller
             
             // Atualiza user_type se especificado e permitido
             if ($request->has('user_type')) {
+                if ($isSelf) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Você não pode alterar seu próprio tipo de usuário.'
+                    ], 403);
+                }
+
                 // Apenas admin pode mudar para/desde admin
                 if ($request->user_type === 'admin' || $user->user_type === 'admin') {
                     if (!Gate::allows('isAdmin')) {

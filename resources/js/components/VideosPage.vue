@@ -196,7 +196,7 @@
             <button
               v-if="video.cached"
               class="btn btn-outline-danger btn-sm"
-              @click="deleteVideoFromCache(video.id)"
+              @click="deleteVideo(video)"
               title="Remover do cache local"
             >
               <i class="bi bi-trash"></i>
@@ -227,6 +227,13 @@
             >
               <i class="bi bi-info-circle"></i>
             </button>
+            <button
+              class="btn btn-outline-light btn-sm"
+              @click="openEditVideoModal(video)"
+              title="Editar vídeo"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -256,7 +263,7 @@
               
               <div class="col-md-12">
                 <label for="videoFile" class="form-label">Arquivo de Vídeo *</label>
-                <input type="file" class="form-control" id="videoFile" @change="handleFileUpload" accept="video/mp4,video/avi,video/mov,video/wmv" required>
+                <input type="file" class="form-control" id="videoFile" @change="handleFileUpload" accept="video/mp4,video/avi,video/mov,video/wmv,video/webm,video/x-matroska" required>
                 <div class="form-text">
                   Formatos suportados: MP4, AVI, MOV, WMV. Tamanho máximo: 100MB
                 </div>
@@ -266,14 +273,16 @@
                 <div class="alert alert-info">
                   <i class="bi bi-info-circle me-2"></i>
                   Arquivo selecionado: <strong>{{ uploadData.file.name }}</strong>
-                  ({{ formatFileSize(uploadData.file.size) }})
+                  ({{ formatFileSize(uploadData.file.size) }})<br>
+                  <span v-if="isReadingDuration">Lendo duração do vídeo...</span>
+                  <span v-else>Duração detectada: <strong>{{ uploadData.duration || 'Não identificada' }}</strong></span>
                 </div>
               </div>
             </div>
             
             <div class="d-flex justify-content-end gap-2 pt-4 border-top mt-4">
               <button type="button" class="btn btn-secondary" @click="closeUploadModal">Cancelar</button>
-              <button type="submit" class="btn btn-primary" :disabled="isUploading || !uploadData.file">
+              <button type="submit" class="btn btn-primary" :disabled="isUploading || !uploadData.file || isReadingDuration || !uploadData.durationSeconds">
                 <span v-if="isUploading">
                   <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                   Enviando...
@@ -352,6 +361,65 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal de Edição -->
+  <div class="modal fade" id="editVideoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">Editar Vídeo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" @click="closeEditVideoModal"></button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveVideoEdit">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label">Título *</label>
+                <input type="text" class="form-control" v-model="editVideoData.title" required>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Descrição</label>
+                <textarea class="form-control" rows="3" v-model="editVideoData.description"></textarea>
+              </div>
+              <div class="col-md-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="video-active" v-model="editVideoData.is_active">
+                  <label class="form-check-label" for="video-active">Vídeo ativo</label>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-4 border-top mt-4">
+              <button type="button" class="btn btn-secondary" @click="closeEditVideoModal">Cancelar</button>
+              <button type="submit" class="btn btn-primary" :disabled="isSavingVideoEdit">
+                <span v-if="isSavingVideoEdit" class="spinner-border spinner-border-sm me-1"></span>
+                Salvar alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Preview -->
+  <div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title">Preview do Vídeo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" @click="closePreviewModal"></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="previewVideoSource" class="ratio ratio-16x9">
+            <video ref="previewPlayer" controls autoplay :src="previewVideoSource"></video>
+          </div>
+          <div v-else class="text-center py-4 text-muted">
+            URL do vídeo indisponível para preview.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -376,18 +444,33 @@ data() {
     isRefreshing: false,
     uploadModal: null,
     detailsModal: null,
+    editVideoModal: null,
+    previewModal: null,
     uploadData: {
       title: '',
       description: '',
-      file: null
+      file: null,
+      duration: '',
+      durationSeconds: null
     },
     isUploading: false,
-    selectedVideo: null
+    isReadingDuration: false,
+    isSavingVideoEdit: false,
+    selectedVideo: null,
+    previewVideoSource: null,
+    editVideoData: {
+      id: null,
+      title: '',
+      description: '',
+      is_active: true
+    }
   };
 },
 mounted() {
   this.uploadModal = new Modal(document.getElementById('uploadModal'));
   this.detailsModal = new Modal(document.getElementById('detailsModal'));
+  this.editVideoModal = new Modal(document.getElementById('editVideoModal'));
+  this.previewModal = new Modal(document.getElementById('previewModal'));
   this.loadVideos();
 },
 methods: {
@@ -500,32 +583,48 @@ methods: {
     }
   },
 
-  deleteVideoFromCache(id) {
-    this.showConfirmModal(
-      'Tem certeza que deseja remover este vídeo do cache local? O vídeo permanecerá disponível na API.',
-      async () => {
-        try {
-          await axios.delete(`/api/videos/${id}/cache`);
+  deleteVideo(video) {
+    const isLocalVideo = String(video.api_id || '').startsWith('local_');
+    const message = isLocalVideo
+      ? 'Tem certeza que deseja excluir este vídeo local? Esta ação remove o ficheiro e o registo do sistema.'
+      : 'Tem certeza que deseja remover este vídeo do cache local? O vídeo permanecerá disponível na API.';
+
+    this.showConfirmModal(message, async () => {
+      try {
+        if (isLocalVideo) {
+          await axios.delete(`/api/videos/${video.id}`);
+          this.showToast('Sucesso', 'Vídeo excluído com sucesso', 'success');
+        } else {
+          await axios.delete(`/api/videos/${video.id}/cache`);
           this.showToast('Sucesso', 'Vídeo removido do cache local', 'success');
-          await this.loadVideos();
-        } catch (error) {
-          console.error('Erro ao remover vídeo:', error);
-          this.showToast('Erro', 'Falha ao remover vídeo do cache', 'error');
         }
+
+        await this.loadVideos();
+      } catch (error) {
+        console.error('Erro ao remover vídeo:', error);
+        this.showToast('Erro', error.response?.data?.message || 'Falha ao remover vídeo', 'error');
       }
-    );
+    });
   },
 
   previewVideo(video) {
-    if (video.cached && video.url) {
-      // Abre o vídeo em uma nova aba
-      window.open(video.url, '_blank');
-    } else if (video.url) {
-      // Tenta abrir mesmo sem cache (streaming)
-      window.open(video.url, '_blank');
-    } else {
+    if (!video.url) {
       this.showToast('Aviso', 'Vídeo não disponível para preview', 'warning');
+      return;
     }
+
+    this.previewVideoSource = video.url;
+    this.previewModal.show();
+  },
+
+  closePreviewModal() {
+    const player = this.$refs.previewPlayer;
+    if (player) {
+      player.pause();
+      player.currentTime = 0;
+    }
+    this.previewModal.hide();
+    this.previewVideoSource = null;
   },
 
   viewVideoDetails(video) {
@@ -533,23 +632,102 @@ methods: {
     this.detailsModal.show();
   },
 
+  openEditVideoModal(video) {
+    this.editVideoData = {
+      id: video.id,
+      title: video.title || '',
+      description: video.description || '',
+      is_active: video.is_active !== false
+    };
+    this.editVideoModal.show();
+  },
+
+  closeEditVideoModal() {
+    this.editVideoModal.hide();
+    this.editVideoData = {
+      id: null,
+      title: '',
+      description: '',
+      is_active: true
+    };
+    this.isSavingVideoEdit = false;
+  },
+
+  async saveVideoEdit() {
+    if (!this.editVideoData.id || !this.editVideoData.title.trim()) {
+      this.showToast('Erro', 'Informe o título do vídeo', 'error');
+      return;
+    }
+
+    this.isSavingVideoEdit = true;
+
+    try {
+      const payload = {
+        title: this.editVideoData.title.trim(),
+        description: this.editVideoData.description || '',
+        is_active: this.editVideoData.is_active
+      };
+
+      const response = await axios.put(`/api/videos/${this.editVideoData.id}`, payload);
+
+      if (response.data.success) {
+        this.showToast('Sucesso', response.data.message || 'Vídeo atualizado com sucesso', 'success');
+        this.closeEditVideoModal();
+        await this.loadVideos();
+      } else {
+        throw new Error(response.data.message || 'Falha ao atualizar vídeo');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar vídeo:', error);
+      this.showToast('Erro', error.response?.data?.message || 'Falha ao atualizar vídeo', 'error');
+    } finally {
+      this.isSavingVideoEdit = false;
+    }
+  },
+
   showUploadModal() {
-    this.uploadData = { title: '', description: '', file: null };
+    this.uploadData = { title: '', description: '', file: null, duration: '', durationSeconds: null };
+    this.isReadingDuration = false;
     this.uploadModal.show();
   },
 
   closeUploadModal() {
     this.uploadModal.hide();
-    this.uploadData = { title: '', description: '', file: null };
+    this.uploadData = { title: '', description: '', file: null, duration: '', durationSeconds: null };
+    this.isReadingDuration = false;
   },
 
-  handleFileUpload(event) {
-    this.uploadData.file = event.target.files[0];
+  async handleFileUpload(event) {
+    this.uploadData.file = event.target.files[0] || null;
+    this.uploadData.duration = '';
+    this.uploadData.durationSeconds = null;
+
+    if (!this.uploadData.file) {
+      return;
+    }
+
+    this.isReadingDuration = true;
+
+    try {
+      const durationSeconds = await this.extractVideoDuration(this.uploadData.file);
+      this.uploadData.durationSeconds = durationSeconds;
+      this.uploadData.duration = this.formatDuration(durationSeconds);
+    } catch (error) {
+      console.error('Erro ao ler duração do vídeo:', error);
+      this.showToast('Erro', 'Não foi possível identificar a duração do vídeo selecionado', 'error');
+    } finally {
+      this.isReadingDuration = false;
+    }
   },
 
   async uploadVideo() {
     if (!this.uploadData.file || !this.uploadData.title) {
       this.showToast('Erro', 'Preencha todos os campos obrigatórios', 'error');
+      return;
+    }
+
+    if (!this.uploadData.durationSeconds) {
+      this.showToast('Erro', 'A duração do vídeo ainda não foi identificada', 'error');
       return;
     }
 
@@ -566,13 +744,12 @@ methods: {
       formData.append('title', this.uploadData.title);
       formData.append('description', this.uploadData.description || '');
       formData.append('video', this.uploadData.file);
+      formData.append('duration_seconds', this.uploadData.durationSeconds);
 
       console.log(this.uploadData.file);
 
       const response = await axios.post('/api/videos/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
+        // Deixe o browser/axios definir o boundary do multipart automaticamente
         // timeout: 60000 // 60 segundos para upload
       });
 
@@ -598,6 +775,46 @@ methods: {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(2048));
     return Math.round(bytes / Math.pow(2048, i) * 100) / 100 + ' ' + sizes[i]; 
+  },
+
+  extractVideoDuration(file) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const videoElement = document.createElement('video');
+
+      videoElement.preload = 'metadata';
+      videoElement.onloadedmetadata = () => {
+        const durationSeconds = Math.round(videoElement.duration);
+        URL.revokeObjectURL(objectUrl);
+
+        if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+          reject(new Error('Duração inválida'));
+          return;
+        }
+
+        resolve(durationSeconds);
+      };
+
+      videoElement.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Falha ao ler metadata do vídeo'));
+      };
+
+      videoElement.src = objectUrl;
+    });
+  },
+
+  formatDuration(totalSeconds) {
+    const seconds = Number(totalSeconds);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
   },
 
   showConfirmModal(message, callback) {
