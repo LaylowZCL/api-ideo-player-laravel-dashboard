@@ -10,7 +10,8 @@
   <section class="doc-section">
     <h2>1. Pré-requisitos de instalação</h2>
     <ul>
-      <li>Servidor Linux recomendado (Ubuntu LTS ou equivalente).</li>
+      {{-- <li>Servidor Linux recomendado (Ubuntu LTS ou equivalente).</li> --}}
+      <li>Servidor compatível com PHP/Laravel e HTTPS obrigatório.</li>
       <li>PHP e extensões compatíveis com a versão Laravel em uso.</li>
       <li>MySQL/MariaDB com backups automáticos.</li>
       <li>Servidor web (Nginx/Apache) com HTTPS obrigatório.</li>

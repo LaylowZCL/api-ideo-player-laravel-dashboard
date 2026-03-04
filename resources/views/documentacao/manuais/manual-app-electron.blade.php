@@ -4,7 +4,7 @@
 
 @section('content')
 <main class="container py-4">
-  <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
+  <a href="{{ route('documentacao.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Manual de Utilização da Aplicação Desktop</h1>
 
   <section class="doc-section">
@@ -12,7 +12,7 @@
     <ul>
       <li><strong>Windows 10/11</strong> (x64).</li>
       <li><strong>macOS</strong> (Intel/Apple Silicon).</li>
-      <li><strong>Linux</strong> (x64, com ambiente gráfico compatível).</li>
+      {{-- <li><strong>Linux</strong> (x64, com ambiente gráfico compatível).</li> --}}
     </ul>
   </section>
 
@@ -44,13 +44,13 @@
     <ul>
       <li><code>package.json</code> - build principal para macOS.</li>
       <li><code>WIN_package.json</code> - build específico para Windows.</li>
-      <li><code>LNX_package.json</code> - build específico para Linux.</li>
+      {{-- <li><code>LNX_package.json</code> - build específico para Linux.</li> --}}
     </ul>
     <p>Antes de compilar cada alvo, copiar o manifesto respectivo para <code>package.json</code> e executar o build.</p>
     <p>Exemplo operacional:</p>
     <ul>
       <li>Windows: usar configuração de <code>WIN_package.json</code> e gerar <code>.exe/.msi</code>.</li>
-      <li>Linux: usar configuração de <code>LNX_package.json</code> e gerar <code>.AppImage/.deb</code>.</li>
+      {{-- <li>Linux: usar configuração de <code>LNX_package.json</code> e gerar <code>.AppImage/.deb</code>.</li> --}}
       <li>macOS: manter <code>package.json</code> principal e gerar <code>.dmg/.zip</code>.</li>
     </ul>
   </section>
@@ -67,11 +67,11 @@
       <li>Abrir pacote <code>.dmg</code> e mover a app para Applications.</li>
       <li>Conceder permissões na primeira execução.</li>
     </ol>
-    <h3>5.3 Linux</h3>
+    {{-- <h3>5.3 Linux</h3>
     <ol>
       <li>Instalar pacote <code>.AppImage</code>, <code>.deb</code> ou equivalente.</li>
       <li>Garantir permissões de execução e codecs necessários.</li>
-    </ol>
+    </ol> --}}
   </section>
 
   <section class="doc-section">
@@ -86,7 +86,7 @@
 
   <section class="doc-section">
     <h2>7. Manual oficial de manutenção</h2>
-    <p>Manter documentação técnica detalhada no repositório Electron: <code>docs/manual-utilizacao-app-electron.md</code>.</p>
+    <p>Manter documentação técnica detalhada no repositório Electron <a href="https://github.com/LaylowZCL/popup-video-player-with-Scheduler" target="_blank" rel="noopener noreferrer">popup-video-player-with-Scheduler</a>: <code>docs/manual-utilizacao-app-electron.md</code>.</p>
   </section>
 </main>
 @endsection

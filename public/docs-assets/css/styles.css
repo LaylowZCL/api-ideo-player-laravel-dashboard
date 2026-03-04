@@ -7,13 +7,89 @@
   --bm-text: #0f1b2d;
 }
 
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   background: linear-gradient(180deg, #f4f8ff 0%, #eef3fb 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--bm-text);
+  min-height: 100vh;
+  padding-top: 0;
+}
+
+body.docs-header-fixed {
+  padding-top: var(--docs-header-height, 120px);
 }
 
 .navbar-bm {
   background: linear-gradient(120deg, var(--bm-blue-900), var(--bm-blue-700));
+}
+
+.docs-header {
+  position: relative;
+  z-index: 1030;
+}
+
+.docs-header.is-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.docs-submenu {
+  background: rgba(8, 47, 99, 0.98);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.docs-header.is-fixed .docs-submenu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.docs-submenu-links {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.docs-submenu-links a {
+  color: #eaf1fb;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.docs-submenu-links a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.docs-submenu-links a.active {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.docs-submenu-sep {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 768px) {
+  .docs-submenu-sep {
+    display: none;
+  }
 }
 
 .brand-wrap {

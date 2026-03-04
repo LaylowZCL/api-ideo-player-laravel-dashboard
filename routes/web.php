@@ -18,34 +18,13 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/documentacao', function () {
-    return view('docs.index');
-})->name('docs.index');
-
-Route::get('/documentacao/manuais/{slug}', function (string $slug) {
-    return redirect()->route('docs.page', ['slug' => $slug]);
-})->name('docs.legacy.manual');
-
-Route::get('/documentacao/{slug}', function (string $slug) {
-    if (str_ends_with($slug, '.html')) {
-        $slug = substr($slug, 0, -5);
-    }
-
-    $pages = [
-        'manual-solucao-mista' => 'docs.manuais.manual-solucao-mista',
-        'manual-api' => 'docs.manuais.manual-api',
-        'manual-dashboard-web' => 'docs.manuais.manual-dashboard-web',
-        'manual-aplicacao-desktop' => 'docs.manuais.manual-app-electron',
-        'manual-app-electron' => 'docs.manuais.manual-app-electron',
-        'ficha-tecnica' => 'docs.manuais.ficha-tecnica',
-    ];
-
-    if (!isset($pages[$slug])) {
-        abort(404);
-    }
-
-    return view($pages[$slug]);
-})->name('docs.page');
+Route::view('/documentacao', 'documentacao.index')->name('documentacao.index');
+Route::view('/documentacao/index', 'documentacao.index')->name('documentacao.index.page');
+Route::view('/documentacao/manual-solucao-mista', 'documentacao.manuais.manual-solucao-mista')->name('documentacao.manual-solucao-mista');
+Route::view('/documentacao/manual-api', 'documentacao.manuais.manual-api')->name('documentacao.manual-api');
+Route::view('/documentacao/manual-dashboard-web', 'documentacao.manuais.manual-dashboard-web')->name('documentacao.manual-dashboard-web');
+Route::view('/documentacao/manual-app-electron', 'documentacao.manuais.manual-app-electron')->name('documentacao.manual-app-electron');
+Route::view('/documentacao/ficha-tecnica', 'documentacao.manuais.ficha-tecnica')->name('documentacao.ficha-tecnica');
 
 Auth::routes();
 
@@ -135,3 +114,17 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     // Dashboard admin (protegido)
     Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard']);
 });
+
+Route::get('/clear-all', function () {
+    $user = auth()->user();
+    if (!$user || !($user->is_admin ?? false)) {
+        abort(403);
+    }
+
+    Artisan::call('optimize:clear');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Caches limpos com sucesso.',
+    ]);
+})->middleware(['auth', 'throttle:10,1'])->name('ops.clear-all');

@@ -30,7 +30,8 @@
 
           <div class="doc-kpis mb-3">
             <div class="doc-kpi"><strong>Escala-alvo</strong> 50 000+ utilizadores</div>
-            <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS, Linux</div>
+            {{-- <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS, Linux</div> --}}
+            <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS</div>
             <div class="doc-kpi"><strong>Modos de execução</strong> Dashboard Web + Aplicação Desktop</div>
           </div>
 

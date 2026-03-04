@@ -11,7 +11,8 @@
   <section class="doc-section">
     <h2>1. Objectivo e âmbito</h2>
     <p>Esta solução integra Dashboard/API (Laravel) e Aplicação Desktop para distribuição e reprodução de vídeos em múltiplos postos de trabalho.</p>
-    <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows, macOS e Linux.</p>
+    {{-- <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows, macOS e Linux.</p> --}}
+    <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows e macOS.</p>
   </section>
 
   <section class="doc-section">
@@ -51,7 +52,8 @@
     <ol>
       <li>Confirmar domínio final da API (ex.: <code>https://dominiodaapi.com</code>).</li>
       <li>Actualizar <code>BASE_URL</code> hardcoded para <code>https://dominiodaapi.com/api</code>.</li>
-      <li>Compilar por sistema operativo (macOS, Windows, Linux).</li>
+      {{-- <li>Compilar por sistema operativo (macOS, Windows, Linux).</li> --}}
+      <li>Compilar por sistema operativo (macOS, Windows).</li>
       <li>Instalar aplicação com pacote gerado para cada plataforma.</li>
     </ol>
   </section>

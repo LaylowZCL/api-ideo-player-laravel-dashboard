@@ -4,21 +4,23 @@
 
 @section('content')
 <main class="container py-4">
-  <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
+  <a href="{{ route('documentacao.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Ficha Técnica</h1>
-  <p class="text-secondary">Modelo de preenchimento com variáveis essenciais.</p>
+  <p class="text-secondary">Documento técnico da solução BM Video Schedule Manager (Dashboard + API + integração com cliente desktop).</p>
 
   <section class="doc-section">
     <h2>1. Identificação da solução</h2>
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">Nome da solução</th><td>[NOME_DA_SOLUCAO]</td></tr>
-          <tr><th>Versão funcional</th><td>[VERSAO_FUNCIONAL]</td></tr>
-          <tr><th>Código interno/projecto</th><td>[CODIGO_INTERNO]</td></tr>
-          <tr><th>Estado</th><td>[ACTIVO_EM_VALIDACAO_DESCONTINUADO]</td></tr>
-          <tr><th>Data de entrada em produção</th><td>[AAAA-MM-DD]</td></tr>
-          <tr><th>Âmbito geográfico</th><td>[AMBITO_GEOGRAFICO]</td></tr>
+          <tr><th style="width:35%">Nome da solução</th><td>BM Video Schedule Manager</td></tr>
+          <tr><th>Tipo de solução</th><td>Dashboard web + API Laravel para agendamento e distribuição de vídeos</td></tr>
+          <tr><th>Versão funcional</th><td>1.0 (baseada no estado atual do repositório)</td></tr>
+          <tr><th>Estado</th><td>ACTIVO</td></tr>
+          <tr><th>Data de entrada em produção</th><td>A confirmar pela operação</td></tr>
+          <tr><th>Âmbito geográfico</th><td>Moçambique</td></tr>
+          <tr><th>Cliente</th><td>Banco de Moçambique</td></tr>
+          <tr><th>Desenvolvedor</th><td>Ideias Comunicação e Serviços</td></tr>
         </tbody>
       </table>
     </div>
@@ -39,15 +41,19 @@
         </thead>
         <tbody>
           <tr>
+            <td>Gestão do projecto</td>
+            <td>Pereira Fernando</td>
+            <td>Ideias Comunicação e Serviços</td>
+            <td>admin@ideiascomunicacao.com</td>
+            <td>Coordenação, priorização e acompanhamento funcional.</td>
+          </tr>
+          <tr>
             <td>Engenheiro de Software</td>
             <td>Fernando Zucula</td>
-            <td>[ORGANIZACAO]</td>
-            <td>[EMAIL_TELEFONE]</td>
+            <td>Ideias Comunicação e Serviços</td>
+            <td>me@fernandozucula.com</td>
             <td>Desenvolvimento, integração técnica, manutenção evolutiva e correcções.</td>
           </tr>
-          <tr><td>[FUNCAO_1]</td><td>[NOME_1]</td><td>[ORGANIZACAO_1]</td><td>[CONTACTO_1]</td><td>[RESPONSABILIDADES_1]</td></tr>
-          <tr><td>[FUNCAO_2]</td><td>[NOME_2]</td><td>[ORGANIZACAO_2]</td><td>[CONTACTO_2]</td><td>[RESPONSABILIDADES_2]</td></tr>
-          <tr><td>[FUNCAO_3]</td><td>[NOME_3]</td><td>[ORGANIZACAO_3]</td><td>[CONTACTO_3]</td><td>[RESPONSABILIDADES_3]</td></tr>
         </tbody>
       </table>
     </div>
@@ -61,9 +67,9 @@
           <tr><th>Componente</th><th>Repositório</th><th>Branch principal</th><th>Versão</th><th>Responsável</th></tr>
         </thead>
         <tbody>
-          <tr><td>Dashboard/API Laravel</td><td>[URL_REPO_LARAVEL]</td><td>[BRANCH_LARAVEL]</td><td>[VERSAO_LARAVEL]</td><td>[RESPONSAVEL_LARAVEL]</td></tr>
-          <tr><td>Aplicação Desktop</td><td>[URL_REPO_APLICACAO_DESKTOP]</td><td>[BRANCH_APLICACAO_DESKTOP]</td><td>[VERSAO_APLICACAO_DESKTOP]</td><td>[RESPONSAVEL_APLICACAO_DESKTOP]</td></tr>
-          <tr><td>Documentação</td><td>[URL_REPO_DOCUMENTACAO]</td><td>[BRANCH_DOCUMENTACAO]</td><td>[VERSAO_DOCUMENTACAO]</td><td>[RESPONSAVEL_DOCUMENTACAO]</td></tr>
+          <tr><td>Dashboard/API Laravel</td><td><a href="https://github.com/LaylowZCL/api-ideo-player-laravel-dashboard" target="_blank" rel="noopener noreferrer">github.com/LaylowZCL/api-ideo-player-laravel-dashboard</a></td><td>main (a confirmar)</td><td>Laravel 10.x / PHP 8.1+</td><td>Fernando Zucula</td></tr>
+          <tr><td>Frontend Web</td><td><a href="https://github.com/LaylowZCL/api-ideo-player-laravel-dashboard" target="_blank" rel="noopener noreferrer">Mesmo repositório (Laravel + Vue)</a></td><td>main (a confirmar)</td><td>Vue 3.5 / Vite 5</td><td>Fernando Zucula</td></tr>
+          <tr><td>Aplicação Desktop</td><td><a href="https://github.com/LaylowZCL/popup-video-player-with-Scheduler" target="_blank" rel="noopener noreferrer">github.com/LaylowZCL/popup-video-player-with-Scheduler</a></td><td>main (a confirmar)</td><td>Electron 27.0.0 / electron-builder 24.13.3</td><td>Fernando Zucula</td></tr>
         </tbody>
       </table>
     </div>
@@ -74,14 +80,15 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">Ambiente de desenvolvimento</th><td>[URL_OU_HOST_DEV]</td></tr>
-          <tr><th>Ambiente de homologação</th><td>[URL_OU_HOST_HML]</td></tr>
-          <tr><th>Ambiente de produção</th><td>[URL_OU_HOST_PRD]</td></tr>
-          <tr><th>Base de dados</th><td>[TIPO_VERSAO_TOPOLOGIA]</td></tr>
-          <tr><th>Armazenamento de vídeos</th><td>[DIRECTORIA_STORAGE_POLITICA]</td></tr>
-          <tr><th>CDN/Proxy/Balanceador</th><td>[SIM_NAO_FORNECEDOR_CONFIG]</td></tr>
-          <tr><th>Sistema de monitorização</th><td>[FERRAMENTA_MONITORIZACAO]</td></tr>
-          <tr><th>Sistema de logs</th><td>[FERRAMENTA_LOGS_RETENCAO]</td></tr>
+          <tr><th style="width:35%">Ambiente de desenvolvimento</th><td>Local via <code>php artisan serve</code> + <code>npm run dev</code></td></tr>
+          <tr><th>Ambiente de homologação</th><td>A confirmar</td></tr>
+          <tr><th>Ambiente de produção</th><td>A confirmar</td></tr>
+          <tr><th>Sistema operativo do servidor</th><td>Rocky Linux 9.x</td></tr>
+          <tr><th>Backend</th><td>Laravel 10.x, PHP 8.1+, Sanctum, Laravel UI</td></tr>
+          <tr><th>Frontend</th><td>Vue 3.5, Vite 5, Bootstrap 5, Chart.js 4</td></tr>
+          <tr><th>Base de dados</th><td>PostgreSQL 14+ (recomendado 15/16)</td></tr>
+          <tr><th>Armazenamento de vídeos</th><td>Serviço local via URL pública (ex.: <code>/videos/*</code>), cache configurável no cliente desktop</td></tr>
+          <tr><th>Sistema de logs</th><td>Laravel logging (<code>storage/logs</code>) + tabela <code>logs</code></td></tr>
         </tbody>
       </table>
     </div>
@@ -92,12 +99,13 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">TLS/HTTPS obrigatório</th><td>[SIM_NAO]</td></tr>
-          <tr><th>Política de rotação de chaves</th><td>[PERIODICIDADE_RESPONSAVEL]</td></tr>
-          <tr><th>Gestão de perfis e permissões</th><td>[MATRIZ_PERFIS]</td></tr>
-          <tr><th>Auditoria de acções</th><td>[SIM_NAO_LOCAL_RETENCAO]</td></tr>
-          <tr><th>Protecção de dados pessoais</th><td>[POLITICA_REFERENCIA]</td></tr>
-          <tr><th>Norma/compliance aplicável</th><td>[NORMA_1_NORMA_2]</td></tr>
+          <tr><th style="width:35%">TLS/HTTPS obrigatório</th><td>Sim (obrigatório em produção)</td></tr>
+          <tr><th>Autenticação web</th><td>Laravel Auth (sessão e credenciais de utilizador)</td></tr>
+          <tr><th>Autenticação técnica API (cliente desktop)</th><td><code>X-API-Key</code> + <code>X-Client-ID</code> validados em middleware dedicado</td></tr>
+          <tr><th>Gestão de perfis e permissões</th><td>Campos <code>user_type</code> e <code>is_admin</code> para controlo de acesso</td></tr>
+          <tr><th>Auditoria de acções</th><td>Registos em logs de aplicação e eventos de reprodução (<code>video_reports</code>)</td></tr>
+          <tr><th>Política de rotação de chaves</th><td>A definir (recomendado: trimestral ou em incidente)</td></tr>
+          <tr><th>Norma/compliance aplicável</th><td>A confirmar conforme política interna do cliente</td></tr>
         </tbody>
       </table>
     </div>
@@ -108,13 +116,13 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">SLA (disponibilidade)</th><td>[SLA_PERCENTAGEM]</td></tr>
-          <tr><th>SLO (latência/erros)</th><td>[SLO_METRICAS]</td></tr>
-          <tr><th>Janela de manutenção</th><td>[DIA_HORA_FUSO]</td></tr>
-          <tr><th>Processo de incidentes</th><td>[FLUXO_INCIDENTE]</td></tr>
-          <tr><th>Canal de suporte N1</th><td>[EMAIL_TELEFONE_PORTAL]</td></tr>
-          <tr><th>Canal de suporte N2/N3</th><td>[EMAIL_TELEFONE_PORTAL]</td></tr>
-          <tr><th>Escalonamento crítico</th><td>[MATRIZ_ESCALONAMENTO]</td></tr>
+          <tr><th style="width:35%">Módulos operacionais</th><td>Dashboard, Vídeos, Agendamentos, Utilizadores, Logs, Preview, Configurações</td></tr>
+          <tr><th>Endpoints públicos essenciais</th><td><code>GET /api/health</code></td></tr>
+          <tr><th>Endpoints técnicos (cliente desktop)</th><td><code>/api/schedules/clients</code>, <code>/api/scheduled/videos</code>, <code>/api/videos/report</code>, <code>/api/ping</code></td></tr>
+          <tr><th>SLA (disponibilidade)</th><td>A definir com operação/negócio</td></tr>
+          <tr><th>Janela de manutenção</th><td>A definir</td></tr>
+          <tr><th>Canal de suporte N1</th><td>A definir</td></tr>
+          <tr><th>Canal de suporte N2/N3</th><td>Fernando Zucula</td></tr>
         </tbody>
       </table>
     </div>
@@ -125,11 +133,12 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">Periodicidade de backup</th><td>[DIARIO_SEMANAL]</td></tr>
-          <tr><th>Retenção de backups</th><td>[N_DIAS_OU_MESES]</td></tr>
-          <tr><th>RPO</th><td>[RPO_VALOR]</td></tr>
-          <tr><th>RTO</th><td>[RTO_VALOR]</td></tr>
-          <tr><th>Teste de restauro</th><td>[PERIODICIDADE_ULTIMA_DATA]</td></tr>
+          <tr><th style="width:35%">Periodicidade de backup</th><td>A definir (recomendado: diário)</td></tr>
+          <tr><th>Retenção de backups</th><td>A definir (recomendado: 30-90 dias)</td></tr>
+          <tr><th>Objectos críticos</th><td>Base de dados, ficheiros de vídeo, configuração de ambiente (<code>.env</code>)</td></tr>
+          <tr><th>RPO</th><td>A definir</td></tr>
+          <tr><th>RTO</th><td>A definir</td></tr>
+          <tr><th>Teste de restauro</th><td>A definir (recomendado: trimestral)</td></tr>
         </tbody>
       </table>
     </div>
@@ -140,12 +149,12 @@
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
         <tbody>
-          <tr><th style="width:35%">Autor do documento</th><td>[AUTOR_DOCUMENTO]</td></tr>
-          <tr><th>Revisor</th><td>[REVISOR_DOCUMENTO]</td></tr>
-          <tr><th>Aprovador</th><td>[APROVADOR_DOCUMENTO]</td></tr>
-          <tr><th>Versão do documento</th><td>[VERSAO_DOCUMENTO]</td></tr>
-          <tr><th>Data da última revisão</th><td>[AAAA-MM-DD]</td></tr>
-          <tr><th>Próxima revisão prevista</th><td>[AAAA-MM-DD]</td></tr>
+          <tr><th style="width:35%">Autor do documento</th><td>Fernando Zucula</td></tr>
+          <tr><th>Revisor</th><td>Fernando Zucula</td></tr>
+          <tr><th>Aprovador</th><td>Pereira Fernando</td></tr>
+          <tr><th>Versão do documento</th><td>1.0</td></tr>
+          <tr><th>Data da última revisão</th><td>{{ date('Y-m-d') }}</td></tr>
+          <tr><th>Próxima revisão prevista</th><td>{{ date('Y-m-d', strtotime('+6 months')) }}</td></tr>
         </tbody>
       </table>
     </div>

@@ -191,7 +191,8 @@
     <ul>
       <li>Consultar <strong>Relatórios Recentes</strong> com paginação numérica.</li>
       <li>Interpretar eventos por texto intuitivo (não técnico) no frontend.</li>
-      <li>Verificar plataformas reportadas (Windows, macOS, Linux).</li>
+      {{-- <li>Verificar plataformas reportadas (Windows, macOS, Linux).</li> --}}
+      <li>Verificar plataformas reportadas (Windows, macOS).</li>
       <li>Priorizar correcção de <strong>playback_error</strong>, interrupções e ausência de vídeo.</li>
     </ul>
   </section>

@@ -4,7 +4,7 @@
 
 @section('content')
 <main class="container py-4">
-  <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
+  <a href="{{ route('documentacao.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Manual de Utilização do Dashboard Web</h1>
 
   <section class="doc-section">
@@ -15,7 +15,7 @@
       <li>Confirmar o perfil atribuído e permissões disponíveis.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/autenticacao.png') }}" alt="Ecrã de autenticação">
+      <img src="{{ asset('docs-assets/images/dashboard/autenticacao.png') }}" alt="Ecrã de autenticação">
       <figcaption>Ecrã de autenticação do Dashboard.</figcaption>
     </figure>
   </section>
@@ -23,7 +23,7 @@
   <section class="doc-section">
     <h2>2. Gestão de vídeos</h2>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/gerenciamento-de-videos.png') }}" alt="Gerenciamento de vídeos">
+      <img src="{{ asset('docs-assets/images/dashboard/gerenciamento-de-videos.png') }}" alt="Gerenciamento de vídeos">
       <figcaption>Painel de vídeos com acções operacionais.</figcaption>
     </figure>
 
@@ -96,7 +96,7 @@
       <li>Validar presença do vídeo na listagem e testar com <strong>▶ Reproduzir</strong>.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/carregamento-de-videos.png') }}" alt="Carregamento de vídeos">
+      <img src="{{ asset('docs-assets/images/dashboard/carregamento-de-videos.png') }}" alt="Carregamento de vídeos">
       <figcaption>Popup de carregamento de vídeo.</figcaption>
     </figure>
 
@@ -120,7 +120,7 @@
   <section class="doc-section">
     <h2>3. Agendamentos</h2>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/listar-agendamentos.png') }}" alt="Listar agendamentos">
+      <img src="{{ asset('docs-assets/images/dashboard/listar-agendamentos.png') }}" alt="Listar agendamentos">
       <figcaption>Listagem e estado dos agendamentos.</figcaption>
     </figure>
 
@@ -141,7 +141,7 @@
       <li>Gravar e validar o novo registo na lista.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/criar-agendamentos.png') }}" alt="Criar agendamentos">
+      <img src="{{ asset('docs-assets/images/dashboard/criar-agendamentos.png') }}" alt="Criar agendamentos">
       <figcaption>Popup de criação/edição de agendamento.</figcaption>
     </figure>
 
@@ -156,7 +156,7 @@
   <section class="doc-section">
     <h2>4. Utilizadores e permissões</h2>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/gestao-de-usuarios.png') }}" alt="Gestão de utilizadores">
+      <img src="{{ asset('docs-assets/images/dashboard/gestao-de-usuarios.png') }}" alt="Gestão de utilizadores">
       <figcaption>Painel de utilizadores e perfis.</figcaption>
     </figure>
 
@@ -174,7 +174,7 @@
       <li>Gravar e validar a nova conta na lista.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/adicionar-usuario.png') }}" alt="Adicionar utilizador">
+      <img src="{{ asset('docs-assets/images/dashboard/adicionar-usuario.png') }}" alt="Adicionar utilizador">
       <figcaption>Popup para criação de utilizador.</figcaption>
     </figure>
 
@@ -191,7 +191,8 @@
     <ul>
       <li>Consultar <strong>Relatórios Recentes</strong> com paginação numérica.</li>
       <li>Interpretar eventos por texto intuitivo (não técnico) no frontend.</li>
-      <li>Verificar plataformas reportadas (Windows, macOS, Linux).</li>
+      {{-- <li>Verificar plataformas reportadas (Windows, macOS, Linux).</li> --}}
+      <li>Verificar plataformas reportadas (Windows, macOS).</li>
       <li>Priorizar correcção de <strong>playback_error</strong>, interrupções e ausência de vídeo.</li>
     </ul>
   </section>

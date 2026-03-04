@@ -11,12 +11,12 @@
         <div class="card-body">
           <h5 class="card-title">Manuais</h5>
           <div class="list-group list-group-flush mt-3">
-            <a class="list-group-item list-group-item-action active" href="{{ route('docs.index') }}">Início</a>
-            <a class="list-group-item list-group-item-action" href="{{ route('docs.page', ['slug' => 'manual-solucao-mista']) }}">Manual da Solução Mista</a>
-            <a class="list-group-item list-group-item-action" href="{{ route('docs.page', ['slug' => 'manual-api']) }}">Manual de Utilização da API</a>
-            <a class="list-group-item list-group-item-action" href="{{ route('docs.page', ['slug' => 'manual-dashboard-web']) }}">Manual de Utilização do Dashboard Web</a>
-            <a class="list-group-item list-group-item-action" href="{{ route('docs.page', ['slug' => 'manual-aplicacao-desktop']) }}">Manual de Utilização da Aplicação Desktop</a>
-            <a class="list-group-item list-group-item-action" href="{{ route('docs.page', ['slug' => 'ficha-tecnica']) }}">Ficha Técnica</a>
+            <a class="list-group-item list-group-item-action active" href="{{ route('documentacao.index') }}">Início</a>
+            <a class="list-group-item list-group-item-action" href="{{ route('documentacao.manual-solucao-mista') }}">Manual da Solução Mista</a>
+            <a class="list-group-item list-group-item-action" href="{{ route('documentacao.manual-api') }}">Manual de Utilização da API</a>
+            <a class="list-group-item list-group-item-action" href="{{ route('documentacao.manual-dashboard-web') }}">Manual de Utilização do Dashboard Web</a>
+            <a class="list-group-item list-group-item-action" href="{{ route('documentacao.manual-app-electron') }}">Manual de Utilização da Aplicação Desktop</a>
+            <a class="list-group-item list-group-item-action" href="{{ route('documentacao.ficha-tecnica') }}">Ficha Técnica</a>
           </div>
         </div>
       </div>
@@ -30,7 +30,8 @@
 
           <div class="doc-kpis mb-3">
             <div class="doc-kpi"><strong>Escala-alvo</strong> 50 000+ utilizadores</div>
-            <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS, Linux</div>
+            {{-- <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS, Linux</div> --}}
+            <div class="doc-kpi"><strong>Sistemas operativos</strong> Windows, macOS</div>
             <div class="doc-kpi"><strong>Modos de execução</strong> Dashboard Web + Aplicação Desktop</div>
           </div>
 
@@ -43,9 +44,10 @@
 
           <div class="alert alert-bm mt-4 mb-3">
             <strong>Manual oficial de manutenção da Aplicação Desktop:</strong>
-            <code>docs/manual-utilizacao-app-electron.md</code> no respectivo repositório.
+            <code>docs/manual-utilizacao-app-electron.md</code> no repositório
+            <a href="https://github.com/LaylowZCL/popup-video-player-with-Scheduler" target="_blank" rel="noopener noreferrer">popup-video-player-with-Scheduler</a>.
           </div>
-          <a class="btn btn-bm" href="{{ route('docs.page', ['slug' => 'manual-solucao-mista']) }}">Começar pelo manual principal</a>
+          <a class="btn btn-bm" href="{{ route('documentacao.manual-solucao-mista') }}">Começar pelo manual principal</a>
         </div>
       </div>
     </div>

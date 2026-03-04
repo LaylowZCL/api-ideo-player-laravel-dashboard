@@ -4,14 +4,15 @@
 
 @section('content')
 <main class="container py-4">
-  <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
+  <a href="{{ route('documentacao.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Manual Descritivo da Solução Mista de Disponibilização de Vídeos</h1>
   <p class="text-secondary">Versão 1.2</p>
 
   <section class="doc-section">
     <h2>1. Objectivo e âmbito</h2>
     <p>Esta solução integra Dashboard/API (Laravel) e Aplicação Desktop para distribuição e reprodução de vídeos em múltiplos postos de trabalho.</p>
-    <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows, macOS e Linux.</p>
+    {{-- <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows, macOS e Linux.</p> --}}
+    <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows e macOS.</p>
   </section>
 
   <section class="doc-section">
@@ -23,7 +24,7 @@
       <li><strong>Armazenamento:</strong> base de dados relacional e directoria de vídeos.</li>
     </ul>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/dashboard.png') }}" alt="Vista geral do dashboard">
+      <img src="{{ asset('docs-assets/images/dashboard/dashboard.png') }}" alt="Vista geral do dashboard">
       <figcaption>Painel principal de operação e monitorização.</figcaption>
     </figure>
   </section>
@@ -42,7 +43,9 @@
     <h2>4. Instalação resumida</h2>
     <h3>4.1 API + Dashboard (servidor)</h3>
     <ol>
-      <li>Instalar PHP, MySQL e servidor web compatíveis com Laravel.</li>
+      <li>Provisionar servidor Rocky Linux 9.x com Nginx/Apache, PHP-FPM 8.1+ e Composer 2.x.</li>
+      <li>Instalar PostgreSQL 14+ e criar base/utilizador dedicados da aplicação.</li>
+      <li>Instalar Node.js 20 LTS para build frontend e <code>ffmpeg/ffprobe</code> para metadados de vídeo.</li>
       <li>Configurar <code>.env</code> com base de dados, URL da aplicação e credenciais de API.</li>
       <li>Executar migrações: <code>php artisan migrate</code>.</li>
       <li>Garantir escrita em <code>storage/</code> e <code>bootstrap/cache</code>.</li>
@@ -51,7 +54,8 @@
     <ol>
       <li>Confirmar domínio final da API (ex.: <code>https://dominiodaapi.com</code>).</li>
       <li>Actualizar <code>BASE_URL</code> hardcoded para <code>https://dominiodaapi.com/api</code>.</li>
-      <li>Compilar por sistema operativo (macOS, Windows, Linux).</li>
+      {{-- <li>Compilar por sistema operativo (macOS, Windows, Linux).</li> --}}
+      <li>Compilar por sistema operativo (macOS, Windows).</li>
       <li>Instalar aplicação com pacote gerado para cada plataforma.</li>
     </ol>
   </section>
@@ -65,7 +69,7 @@
       <li>Monitorizar relatórios de reprodução e erros.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/gerenciamento-de-videos.png') }}" alt="Gestão de vídeos">
+      <img src="{{ asset('docs-assets/images/dashboard/gerenciamento-de-videos.png') }}" alt="Gestão de vídeos">
       <figcaption>Gestão e sincronização de vídeos no Dashboard.</figcaption>
     </figure>
   </section>
@@ -104,10 +108,10 @@
   <section class="doc-section">
     <h2>9. Manuais específicos</h2>
     <ul>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-api']) }}">Manual de Utilização da API</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-dashboard-web']) }}">Manual de Utilização do Dashboard Web</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-aplicacao-desktop']) }}">Manual de Utilização da Aplicação Desktop</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'ficha-tecnica']) }}">Ficha Técnica</a></li>
+      <li><a href="{{ route('documentacao.manual-api') }}">Manual de Utilização da API</a></li>
+      <li><a href="{{ route('documentacao.manual-dashboard-web') }}">Manual de Utilização do Dashboard Web</a></li>
+      <li><a href="{{ route('documentacao.manual-app-electron') }}">Manual de Utilização da Aplicação Desktop</a></li>
+      <li><a href="{{ route('documentacao.ficha-tecnica') }}">Ficha Técnica</a></li>
     </ul>
   </section>
 </main>
