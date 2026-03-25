@@ -6,6 +6,7 @@ use App\Models\Schedule;
 use App\Models\Video;
 use App\Models\Log;
 use App\Models\VideoReport;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -33,9 +34,10 @@ class DashboardController extends Controller
         // OU se é uma requisição AJAX
         $isVueRequest = $request->header('X-Request-Source') === 'Vue-Component';
         $isAjax = $request->ajax() || $request->wantsJson();
+        $hasApiKey = (bool) $request->header('X-API-Key', $request->input('api_key'));
         
         // Se não for Vue nem AJAX, bloqueia
-        if (!$isVueRequest && !$isAjax) {
+        if (!$isVueRequest && !$isAjax && !$hasApiKey) {
             return response()->json([
                 'error' => 'Acesso restrito',
                 'message' => 'Endpoint disponível apenas para a aplicação'
@@ -183,6 +185,11 @@ class DashboardController extends Controller
                 'recentLogs' => $recentLogs,
                 'upcomingSchedules' => $upcomingSchedules,
                 'recentReports' => $recentReports,
+                'popupSettings' => SystemSetting::getCurrentSettings()->only([
+                    'popup_width',
+                    'popup_height',
+                    'popup_position'
+                ]),
                 'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
 

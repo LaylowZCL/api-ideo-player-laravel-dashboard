@@ -36,6 +36,9 @@ class SystemSetting extends Model
         'enable_hardware_acceleration',
         'preload_videos',
         'enable_auto_update',
+        'popup_width',
+        'popup_height',
+        'popup_position',
     ];
 
     protected $casts = [
@@ -67,6 +70,9 @@ class SystemSetting extends Model
         'enable_hardware_acceleration' => true,
         'preload_videos' => true,
         'enable_auto_update' => true,
+        'popup_width' => 960,
+        'popup_height' => 540,
+        'popup_position' => 'center',
     ];
 
     public static function getCurrentSettings()
@@ -116,6 +122,9 @@ class SystemSetting extends Model
             'enableHardwareAcceleration' => $this->enable_hardware_acceleration,
             'preloadVideos' => $this->preload_videos,
             'enableAutoUpdate' => $this->enable_auto_update,
+            'popupWidth' => $this->popup_width,
+            'popupHeight' => $this->popup_height,
+            'popupPosition' => $this->popup_position,
         ];
     }
 
@@ -143,6 +152,9 @@ class SystemSetting extends Model
             'enable_hardware_acceleration' => $vueData['enableHardwareAcceleration'] ?? true,
             'preload_videos' => $vueData['preloadVideos'] ?? true,
             'enable_auto_update' => $vueData['enableAutoUpdate'] ?? true,
+            'popup_width' => $vueData['popupWidth'] ?? 960,
+            'popup_height' => $vueData['popupHeight'] ?? 540,
+            'popup_position' => $vueData['popupPosition'] ?? 'center',
         ];
     }
 }

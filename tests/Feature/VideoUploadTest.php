@@ -42,6 +42,7 @@ class VideoUploadTest extends TestCase
             ->post('/api/videos/upload', [
                 'title' => 'Teste',
                 'description' => 'Upload sem CSRF',
+                'duration_seconds' => 60,
                 'video' => $file,
             ]);
 
@@ -68,6 +69,7 @@ class VideoUploadTest extends TestCase
                 '_token' => $token,
                 'title' => 'Teste',
                 'description' => 'Upload válido',
+                'duration_seconds' => 60,
                 'video' => $file,
             ]);
 
@@ -77,7 +79,7 @@ class VideoUploadTest extends TestCase
         $videoName = data_get($response->json(), 'video.name');
         $this->assertNotEmpty($videoName);
 
-        $filePath = public_path('videos/' . $videoName);
+        $filePath = storage_path('app/public/videos/' . $videoName);
         $this->assertTrue(File::exists($filePath));
 
         File::delete($filePath);

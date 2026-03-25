@@ -1,15 +1,52 @@
 <template>
     <!-- Cabeçalho -->
     <div class="mb-4">
-      <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
-          <h1 class="h2 mb-1">Gestão de Usuários</h1>
-          <p class="text-muted mb-0">Gerencie os usuários do sistema</p>
+          <h1 class="page-title mb-1">Gestão de Usuários</h1>
+          <p class="page-subtitle mb-0">Controle de acessos, permissões e perfis com rastreabilidade total</p>
         </div>
-        <button class="btn btn-primary" @click="openCreateUserModal" v-if="canCreateUser">
-          <i class="bi bi-plus me-1"></i>
-          Novo Usuário
-        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" @click="openCreateUserModal" v-if="canCreateUser">
+            <i class="bi bi-plus me-1"></i>
+            Novo Usuário
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de ferramentas -->
+    <div class="card toolbar-card mb-4">
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-5">
+            <div class="input-group">
+              <span class="input-group-text bg-transparent border-0 text-muted">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="text" class="form-control" placeholder="Pesquisar por nome, email ou perfil"
+                     v-model="searchTerm">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" v-model="roleFilter">
+              <option value="">Todos os perfis</option>
+              <option value="admin">Administradores</option>
+              <option value="manager">Gestores</option>
+              <option value="user">Usuários</option>
+            </select>
+          </div>
+          <div class="col-md-4 d-flex gap-2">
+            <select class="form-select" v-model="sortBy">
+              <option value="name">Ordenar por Nome</option>
+              <option value="created_at">Ordenar por Data</option>
+              <option value="user_type">Ordenar por Perfil</option>
+            </select>
+            <button class="btn btn-outline-light" @click="toggleSortDirection">
+              <i class="bi" :class="sortDirection === 'asc' ? 'bi-sort-down' : 'bi-sort-up'"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -103,37 +140,33 @@
     </div>
 
     <!-- Estatísticas Rápidas -->
-    <div class="row mb-4">
+    <div class="row mb-4 g-3">
       <div class="col-md-3">
-        <div class="card bg-info bg-opacity-10 border-info">
-          <div class="card-body text-center py-3">
-            <h3 class="mb-1">{{ stats.total }}</h3>
-            <p class="small text-muted mb-0">Total Usuários</p>
-          </div>
+        <div class="stat-card stat-total">
+          <div class="stat-label">Total Usuários</div>
+          <div class="stat-value">{{ stats.total }}</div>
+          <div class="stat-icon"><i class="bi bi-people"></i></div>
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-primary bg-opacity-10 border-primary">
-          <div class="card-body text-center py-3">
-            <h3 class="mb-1">{{ stats.admins }}</h3>
-            <p class="small text-muted mb-0">Administradores</p>
-          </div>
+        <div class="stat-card stat-admins">
+          <div class="stat-label">Administradores</div>
+          <div class="stat-value">{{ stats.admins }}</div>
+          <div class="stat-icon"><i class="bi bi-shield-lock"></i></div>
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-success bg-opacity-10 border-success">
-          <div class="card-body text-center py-3">
-            <h3 class="mb-1">{{ stats.managers }}</h3>
-            <p class="small text-muted mb-0">Gestores</p>
-          </div>
+        <div class="stat-card stat-managers">
+          <div class="stat-label">Gestores</div>
+          <div class="stat-value">{{ stats.managers }}</div>
+          <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-warning bg-opacity-10 border-warning">
-          <div class="card-body text-center py-3">
-            <h3 class="mb-1">{{ stats.users }}</h3>
-            <p class="small text-muted mb-0">Usuários Comuns</p>
-          </div>
+        <div class="stat-card stat-users">
+          <div class="stat-label">Usuários Comuns</div>
+          <div class="stat-value">{{ stats.users }}</div>
+          <div class="stat-icon"><i class="bi bi-person"></i></div>
         </div>
       </div>
     </div>
@@ -147,53 +180,50 @@
         <p class="mt-3 text-muted">Carregando usuários...</p>
       </div>
 
-      <div v-else-if="users.length === 0" class="text-center py-5">
+      <div v-else-if="filteredUsers.length === 0" class="text-center py-5">
         <i class="bi bi-people text-muted fs-1"></i>
         <h4 class="mt-3 text-muted">Nenhum usuário encontrado</h4>
         <p class="text-muted" v-if="canCreateUser">Clique em "Novo Usuário" para começar</p>
       </div>
 
       <div v-else>
-        <div class="card mb-3" v-for="user in users" :key="user.id">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="flex-fill">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                  <div class="user-avatar">
-                    <i class="bi bi-person-circle fs-4" :class="getAvatarClass(user.user_type)"></i>
-                  </div>
-                  <div>
-                    <h5 class="mb-0">{{ user.name }}</h5>
-                    <p class="small text-muted mb-0">{{ user.email }}</p>
-                  </div>
-                  <span class="badge" :class="getRoleBadgeClass(user.user_type)">
-                    {{ user.role_name }}
-                  </span>
-                  <span v-if="user.id === currentUser.id" class="badge bg-info">
-                    <i class="bi bi-person-check me-1"></i>Você
-                  </span>
-                </div>
-                <div class="small text-muted">
-                  <i class="bi bi-calendar3 me-1"></i>
-                  Criado em {{ user.created_at }}
-                </div>
+        <div class="user-card" v-for="user in filteredUsers" :key="user.id">
+          <div class="user-card-main">
+            <div class="user-avatar-lg" :class="getAvatarClass(user.user_type)">
+              {{ user.name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-meta">
+              <div class="user-name">
+                {{ user.name }}
+                <span v-if="user.id === currentUser.id" class="chip chip-self">
+                  <i class="bi bi-person-check me-1"></i>Você
+                </span>
               </div>
-              <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-secondary btn-sm" 
-                        @click="editUser(user)"
-                        :disabled="!canEditUser(user)"
-                        :title="canEditUser(user) ? 'Editar' : 'Sem permissão para editar'">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-outline-danger btn-sm" 
-                        v-if="user.id !== currentUser.id"
-                        @click="deleteUser(user)"
-                        :disabled="!canDeleteUser(user)"
-                        :title="canDeleteUser(user) ? 'Excluir' : 'Sem permissão para excluir'">
-                  <i class="bi bi-trash"></i>
-                </button>
+              <div class="user-email">{{ user.email }}</div>
+              <div class="user-tags">
+                <span class="chip" :class="getRoleBadgeClass(user.user_type)">
+                  {{ user.role_name }}
+                </span>
+                <span class="chip chip-muted">
+                  <i class="bi bi-calendar3 me-1"></i> {{ user.created_at }}
+                </span>
               </div>
             </div>
+          </div>
+          <div class="user-actions">
+            <button class="btn btn-outline-light btn-sm" 
+                    @click="editUser(user)"
+                    :disabled="!canEditUser(user)"
+                    :title="canEditUser(user) ? 'Editar' : 'Sem permissão para editar'">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" 
+                    v-if="user.id !== currentUser.id"
+                    @click="deleteUser(user)"
+                    :disabled="!canDeleteUser(user)"
+                    :title="canDeleteUser(user) ? 'Excluir' : 'Sem permissão para excluir'">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -246,6 +276,10 @@ export default {
       editingUser: null,
       loading: false,
       users: [],
+      searchTerm: '',
+      roleFilter: '',
+      sortBy: 'name',
+      sortDirection: 'asc',
       currentUser: {
         id: null,
         user_type: 'user'
@@ -289,6 +323,36 @@ export default {
     
     isCurrentUser() {
       return this.editingUser && this.editingUser.id === this.currentUser.id;
+    },
+
+    filteredUsers() {
+      const term = this.searchTerm.trim().toLowerCase();
+      let list = [...this.users];
+
+      if (this.roleFilter) {
+        list = list.filter(user => user.user_type === this.roleFilter);
+      }
+
+      if (term) {
+        list = list.filter(user =>
+          user.name.toLowerCase().includes(term) ||
+          user.email.toLowerCase().includes(term) ||
+          user.role_name.toLowerCase().includes(term)
+        );
+      }
+
+      list.sort((a, b) => {
+        const direction = this.sortDirection === 'asc' ? 1 : -1;
+        if (this.sortBy === 'created_at') {
+          return (this.parseDateBr(a.created_at) - this.parseDateBr(b.created_at)) * direction;
+        }
+        if (this.sortBy === 'user_type') {
+          return a.user_type.localeCompare(b.user_type) * direction;
+        }
+        return a.name.localeCompare(b.name) * direction;
+      });
+
+      return list;
     }
   },
   mounted() {
@@ -336,6 +400,18 @@ export default {
       this.stats.admins = this.users.filter(u => u.user_type === 'admin').length;
       this.stats.managers = this.users.filter(u => u.user_type === 'manager').length;
       this.stats.users = this.users.filter(u => u.user_type === 'user').length;
+    },
+
+    toggleSortDirection() {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    },
+
+    parseDateBr(value) {
+      if (!value) return new Date(0);
+      const parts = value.split('/');
+      if (parts.length !== 3) return new Date(value);
+      const [day, month, year] = parts.map(Number);
+      return new Date(year, month - 1, day);
     },
     
     canEditUser(user) {
@@ -558,20 +634,20 @@ export default {
     
     getRoleBadgeClass(userType) {
       const classes = {
-        'admin': 'bg-primary',
-        'manager': 'bg-success',
-        'user': 'bg-secondary'
+        'admin': 'chip-admin',
+        'manager': 'chip-manager',
+        'user': 'chip-user'
       };
       return classes[userType] || 'bg-secondary';
     },
     
     getAvatarClass(userType) {
       const classes = {
-        'admin': 'text-primary',
-        'manager': 'text-success',
-        'user': 'text-secondary'
+        'admin': 'avatar-admin',
+        'manager': 'avatar-manager',
+        'user': 'avatar-user'
       };
-      return classes[userType] || 'text-secondary';
+      return classes[userType] || 'avatar-user';
     },
     
     showConfirmModal(message, callback) {
@@ -619,15 +695,218 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:wght@600&display=swap');
+
+.page-title {
+  font-family: "Inter";
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: #f2f7ff;
+}
+
+.page-subtitle {
+  font-family: "Inter";
+  color: rgba(210, 225, 255, 0.75);
+}
+
+.toolbar-card {
+  background: linear-gradient(135deg, rgba(8, 35, 72, 0.9), rgba(11, 51, 100, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 15px 30px rgba(4, 20, 40, 0.25);
+}
+
+.toolbar-card .form-control,
+.toolbar-card .form-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f5f7ff;
+}
+
+.toolbar-card .form-control::placeholder {
+  color: rgba(220, 235, 255, 0.6);
+}
+
+.toolbar-card .input-group-text {
+  color: rgba(220, 235, 255, 0.6);
+}
+
+.stat-card {
+  position: relative;
+  padding: 1.2rem 1.4rem;
+  border-radius: 18px;
+  color: #f7f9ff;
+  overflow: hidden;
+  min-height: 120px;
+  box-shadow: 0 18px 28px rgba(4, 20, 40, 0.3);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.stat-value {
+  font-family: "Inter";
+  font-size: 2.2rem;
+  margin-top: 0.4rem;
+}
+
+.stat-icon {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.stat-total {
+  background: linear-gradient(130deg, #0f3b7a, #1456b4);
+}
+
+.stat-admins {
+  background: linear-gradient(130deg, #0f2f5a, #17498e);
+}
+
+.stat-managers {
+  background: linear-gradient(130deg, #0f4a5f, #1f7aa1);
+}
+
+.stat-users {
+  background: linear-gradient(130deg, #254065, #385f92);
+}
+
+.user-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.4rem;
+  border-radius: 18px;
+  background: rgba(7, 38, 78, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 26px rgba(3, 18, 36, 0.25);
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(3, 18, 36, 0.35);
+}
+
+.user-card-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Inter";
+  font-size: 1.5rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.user-name {
+  font-family: "Inter";
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #f6f9ff;
+}
+
+.user-email {
+  color: rgba(210, 225, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.user-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.chip-muted {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chip-self {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.chip-admin {
+  background: linear-gradient(135deg, #1c4fa3, #2b76d4);
+}
+
+.chip-manager {
+  background: linear-gradient(135deg, #1f7aa1, #2db9c9);
+}
+
+.chip-user {
+  background: linear-gradient(135deg, #5c6e8f, #738bb5);
+}
+
+.avatar-admin {
+  background: rgba(35, 100, 200, 0.5);
+}
+
+.avatar-manager {
+  background: rgba(35, 150, 170, 0.5);
+}
+
+.avatar-user {
+  background: rgba(130, 150, 180, 0.5);
+}
+
+.user-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #f7f9ff;
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+</style>
+<style scoped>
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #f8f9fa;
+  background-color: rgba(186, 154, 106, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c757d;
+  color: var(--text-muted);
 }
 
 .card {
@@ -648,8 +927,8 @@ export default {
 }
 
 .btn-outline-secondary:hover {
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .btn-outline-secondary:disabled {

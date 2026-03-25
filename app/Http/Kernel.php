@@ -35,6 +35,7 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\EnsureTwoFactorVerified::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
@@ -67,6 +68,8 @@ class Kernel extends HttpKernel
 
         // Autenticacao de API
         'api.auth' => \App\Http\Middleware\ApiAuthMiddleware::class,
+        'client.auth' => \App\Http\Middleware\ClientAuthMiddleware::class,
         'internal.api' => \App\Http\Middleware\InternalApiAccess::class,
+        'two_factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
     ];
 }

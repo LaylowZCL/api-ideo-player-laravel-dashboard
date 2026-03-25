@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Setting;
+use App\Models\SystemSetting;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,8 +16,8 @@ class SettingController extends Controller
 
     public function goToSettings()
     {
-        $settings = Setting::first() ?? new Setting([
-            'api_endpoint' => config('services.video_api.endpoint'),
+        $settings = SystemSetting::first() ?? new SystemSetting([
+            'api_endpoint' => config('services.video_api.endpoint', url('/api/videos')),
             'api_key' => '',
             'sync_interval' => 30,
             'default_monitor' => 'principal',
@@ -25,15 +26,14 @@ class SettingController extends Controller
             'start_with_windows' => true,
             'show_in_system_tray' => true,
             'enable_notifications' => true,
-            'cache_location' => 'C:\\VideoScheduler\\Cache',
-            'max_cache_size' => 5,
+            'cache_location' => storage_path('app/public/videos'),
+            'max_cache_size' => 10,
             'auto_cleanup' => true,
             'log_level' => 'info',
-            'max_log_files' => 10,
             'enable_auto_update' => true,
             'max_memory_usage' => 200,
             'enable_hardware_acceleration' => true,
-            'preload_videos' => true
+            'preload_videos' => false
         ]);
 
         return view('settings', compact('settings'));
@@ -62,21 +62,27 @@ class SettingController extends Controller
         ]);
 
         try {
-            $settings = Setting::first();
+            $settings = SystemSetting::first();
 
             if ($settings) {
                 $settings->update($validated);
             } else {
-                $settings = Setting::create($validated);
+                $settings = SystemSetting::create($validated);
             }
+
+            app(AuditLogService::class)->log('settings.save', 'success', [
+                'settings_id' => $settings->id,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Configurações salvas com sucesso',
                 'settings' => $settings
             ]);
-
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('settings.save', 'failed', [
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao salvar configurações: ' . $e->getMessage()
@@ -84,10 +90,13 @@ class SettingController extends Controller
         }
     }
 
+    /**
+     * @deprecated Use SystemSettingController instead
+     */
     private function createDefaultSettings()
     {
-        return Setting::create([
-            'api_endpoint' => config('services.video_api.endpoint'),
+        return SystemSetting::create([
+            'api_endpoint' => config('services.video_api.endpoint', url('/api/videos')),
             'api_key' => "",
             'sync_interval' => 30,
             'default_monitor' => "principal",
@@ -96,8 +105,8 @@ class SettingController extends Controller
             'start_with_windows' => true,
             'show_in_system_tray' => true,
             'enable_notifications' => true,
-            'cache_location' => "C:\\VideoScheduler\\Cache",
-            'max_cache_size' => 5,
+            'cache_location' => storage_path('app/public/videos'),
+            'max_cache_size' => 10,
             'auto_cleanup' => true,
             'log_level' => "info",
             'max_memory_usage' => 200,

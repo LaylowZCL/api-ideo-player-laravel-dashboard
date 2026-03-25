@@ -11,6 +11,7 @@ use App\Http\Controllers\ClientMonitorController;
 | User (Sanctum)
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -26,12 +27,16 @@ Route::get('/health', function () {
 });
 
 
-Route::middleware(['api.auth'])->group(function () {
+Route::middleware(['api.auth', 'client.auth'])->group(function () {
     // Schedules (apenas Electron)
     Route::get('/schedules/clients', [ClientAppController::class, 'schedules']);
 
     // Videos agendados (Electron)
     Route::get('/scheduled/videos', [ClientAppController::class, 'scheduledVideos']);
+    Route::get('/scheduled/videos/next', [ClientAppController::class, 'scheduledVideosNext']);
+
+    // Subtitles (legendas para vídeos)
+    Route::get('/subtitles/{schedule_id}', [ClientAppController::class, 'getSubtitle']);
 
     // Reports (Electron)
     Route::post('/videos/report', [ClientAppController::class, 'storeReport']);

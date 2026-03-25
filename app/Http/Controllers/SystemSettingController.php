@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemSetting;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -47,7 +48,10 @@ class SystemSettingController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $current = SystemSetting::getCurrentSettings();
+        $payload = array_merge($current->toVueFormat(), $request->all());
+
+        $validator = Validator::make($payload, [
             // Configurações de API
             'apiEndpoint' => 'required|url|max:500',
             'apiKey' => 'nullable|string|max:255',
@@ -74,6 +78,9 @@ class SystemSettingController extends Controller
             'enableHardwareAcceleration' => 'required|boolean',
             'preloadVideos' => 'required|boolean',
             'enableAutoUpdate' => 'required|boolean',
+            'popupWidth' => 'required|integer|min:256|max:3840',
+            'popupHeight' => 'required|integer|min:144|max:2160',
+            'popupPosition' => 'required|in:center,top_left,top_right,bottom_left,bottom_right',
         ]);
 
         if ($validator->fails()) {
@@ -86,14 +93,18 @@ class SystemSettingController extends Controller
 
         try {
             // Obtém os dados no formato do model
-            $data = SystemSetting::fromVueFormat($request->all());
+            $data = SystemSetting::fromVueFormat($payload);
             
             // Cria um novo registro de configuração (mantendo histórico)
             $settings = SystemSetting::create($data);
-            
+
             Log::info('Configurações do sistema atualizadas', [
                 'settings_id' => $settings->id,
                 'log_level' => $settings->log_level
+            ]);
+
+            app(AuditLogService::class)->log('system_settings.save', 'success', [
+                'settings_id' => $settings->id,
             ]);
             
             return response()->json([
@@ -103,6 +114,9 @@ class SystemSettingController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao salvar configurações: ' . $e->getMessage());
+            app(AuditLogService::class)->log('system_settings.save', 'failed', [
+                'error' => $e->getMessage(),
+            ], 'error');
             
             return response()->json([
                 'success' => false,
@@ -168,6 +182,10 @@ class SystemSettingController extends Controller
             Log::info('Configurações restauradas para padrão', [
                 'settings_id' => $settings->id
             ]);
+
+            app(AuditLogService::class)->log('system_settings.restore', 'success', [
+                'settings_id' => $settings->id,
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -176,6 +194,9 @@ class SystemSettingController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao restaurar configurações: ' . $e->getMessage());
+            app(AuditLogService::class)->log('system_settings.restore', 'failed', [
+                'error' => $e->getMessage(),
+            ], 'error');
             
             return response()->json([
                 'success' => false,

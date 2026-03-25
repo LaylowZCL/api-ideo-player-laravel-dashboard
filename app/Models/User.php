@@ -21,7 +21,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'user_type'
+        'user_type',
+        'role',
+        'is_superadmin',
+        'is_admin',
+        'is_manager',
     ];
 
     /**
@@ -32,6 +36,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -42,5 +48,48 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'two_factor_confirmed_at' => 'datetime',
     ];
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !empty($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
+    }
+
+    /**
+     * Check if user is a super admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->roleName() === 'super_admin';
+    }
+
+    /**
+     * Check if user is an admin (includes super admin)
+     */
+    public function isAdmin(): bool
+    {
+        return in_array($this->roleName(), ['super_admin', 'admin'], true);
+    }
+
+    /**
+     * Check if user is a manager (includes admin)
+     */
+    public function isManager(): bool
+    {
+        return in_array($this->roleName(), ['super_admin', 'admin', 'manager'], true);
+    }
+
+    public function roleName(): string
+    {
+        if (!empty($this->role)) {
+            return (string) $this->role;
+        }
+
+        if (!empty($this->user_type)) {
+            return (string) $this->user_type;
+        }
+
+        return 'user';
+    }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Video;
+use App\Models\VideoSubtitle;
 use App\Models\SystemSetting;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -39,7 +41,10 @@ class VideoController extends Controller
     {
         $search = $request->input('search');
 
-            $videos = Video::query()
+        $videos = Video::query()
+            ->when(Schema::hasTable('video_subtitles'), function ($query) {
+                $query->with('subtitles');
+            })
             ->when($search, function ($query, $search) {
                 return $query->where('title', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%");
@@ -63,6 +68,14 @@ class VideoController extends Controller
                     'url' => $video->url,
                     'thumbnail_url' => $video->thumbnail_url,
                     'is_active' => $video->is_active,
+                    'subtitles' => $video->subtitles->map(function ($subtitle) {
+                        return [
+                            'id' => $subtitle->id,
+                            'label' => $subtitle->label,
+                            'language' => $subtitle->language,
+                            'url' => $subtitle->url,
+                        ];
+                    })->values(),
                 ];
             });
 
@@ -78,7 +91,7 @@ class VideoController extends Controller
     public function sync(Request $request)
     {
         try {
-            $videosDirectory = public_path('videos');
+            $videosDirectory = storage_path('app/public/videos');
 
             if (!File::exists($videosDirectory)) {
                 File::makeDirectory($videosDirectory, 0755, true);
@@ -174,6 +187,12 @@ class VideoController extends Controller
 
             $this->cleanupDuplicateLocalVideos();
 
+            app(AuditLogService::class)->log('video.sync', 'success', [
+                'synced' => $syncedCount,
+                'created' => $createdCount,
+                'deleted' => $deletedCount,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => "Sincronização concluída. {$syncedCount} vídeos sincronizados ({$createdCount} novos, {$deletedCount} removidos).",
@@ -182,6 +201,9 @@ class VideoController extends Controller
                 'deleted' => $deletedCount,
             ]);
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('video.sync', 'failed', [
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao sincronizar vídeos: ' . $e->getMessage()
@@ -225,6 +247,11 @@ class VideoController extends Controller
                 'last_sync' => now()
             ]);
 
+            app(AuditLogService::class)->log('video.download', 'success', [
+                'video_id' => $video->id,
+                'api_id' => $video->api_id,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Vídeo baixado com sucesso',
@@ -232,6 +259,11 @@ class VideoController extends Controller
             ]);
         } catch (\Exception $e) {
             $video->update(['status' => 'error']);
+
+            app(AuditLogService::class)->log('video.download', 'failed', [
+                'video_id' => $video->id,
+                'error' => $e->getMessage(),
+            ], 'error');
 
             return response()->json([
                 'success' => false,
@@ -256,12 +288,20 @@ class VideoController extends Controller
                 'file_path' => null
             ]);
 
+            app(AuditLogService::class)->log('video.cache_remove', 'success', [
+                'video_id' => $video->id,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Vídeo removido do cache',
                 'video' => $video
             ]);
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('video.cache_remove', 'failed', [
+                'video_id' => $video->id,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao remover vídeo do cache: ' . $e->getMessage()
@@ -279,7 +319,9 @@ class VideoController extends Controller
             'video' => 'required|file|mimetypes:video/mp4,video/avi,video/quicktime,video/x-ms-wmv,video/x-matroska,video/webm',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'duration_seconds' => 'nullable|integer|min:1'
+            'duration_seconds' => 'nullable|integer|min:1',
+            'subtitles' => 'nullable|array',
+            'subtitles.*' => 'file|mimes:srt,txt|mimetypes:text/plain,application/x-subrip',
         ]);
 
         // return $request;
@@ -288,8 +330,8 @@ class VideoController extends Controller
             $file = $request->file('video');
             $fileSize = $file->getSize();
 
-            // 1️⃣ Garante que existe o diretório public/videos
-            $destinationPath = public_path('videos');
+            // 1️⃣ Garante que existe o diretório storage/app/public/videos
+            $destinationPath = storage_path('app/public/videos');
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0755, true);
             }
@@ -331,17 +373,29 @@ class VideoController extends Controller
                 'last_sync' => now()
             ]);
 
+            if ($request->hasFile('subtitles')) {
+                $this->storeVideoSubtitles($video, $request->file('subtitles'));
+            }
+
+            app(AuditLogService::class)->log('video.upload', 'success', [
+                'video_id' => $video->id,
+                'title' => $video->title,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Vídeo enviado com sucesso',
-                'video' => $video
+                'video' => Schema::hasTable('video_subtitles') ? $video->load('subtitles') : $video
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao enviar vídeo', [
                 'message' => $e->getMessage(),
                 'file' => $request->file('video') ? $request->file('video')->getClientOriginalName() : null,
-                'size' => $request->file('video') ? $request->file('video')->getSize() : null,
+                'size' => null,
             ]);
+            app(AuditLogService::class)->log('video.upload', 'failed', [
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao enviar vídeo: ' . $e->getMessage()
@@ -366,12 +420,20 @@ class VideoController extends Controller
         try {
             $video->update($data);
 
+            app(AuditLogService::class)->log('video.update', 'success', [
+                'video_id' => $video->id,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Vídeo atualizado com sucesso',
                 'video' => $video,
             ]);
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('video.update', 'failed', [
+                'video_id' => $video->id,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao atualizar vídeo: ' . $e->getMessage(),
@@ -403,14 +465,24 @@ class VideoController extends Controller
 
             // Remove localmente
             $this->deleteLocalVideoFile($video);
+            $this->deleteVideoSubtitleFiles($video);
 
             $video->delete();
+
+            app(AuditLogService::class)->log('video.delete', 'success', [
+                'video_id' => $video->id,
+                'api_id' => $video->api_id,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Vídeo removido com sucesso'
             ]);
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('video.delete', 'failed', [
+                'video_id' => $video->id,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao remover vídeo: ' . $e->getMessage()
@@ -637,7 +709,9 @@ class VideoController extends Controller
         }
 
         if (!empty($video->name)) {
+            // Try both old public path (for backwards compatibility) and new storage path
             $candidates[] = public_path('videos/' . $video->name);
+            $candidates[] = storage_path('app/public/videos/' . $video->name);
             $candidates[] = Storage::disk('public')->path('videos/' . $video->name);
         }
 
@@ -651,7 +725,61 @@ class VideoController extends Controller
     private function buildVideoPublicUrl(string $filename): string
     {
         $safeFilename = rawurlencode(ltrim($filename, '/'));
-        return $this->resolvePublicBaseUrl() . '/videos/' . $safeFilename;
+        // Using storage path for consistency: asset('storage/videos/filename.mp4')
+        return asset('storage/videos/' . $safeFilename);
+    }
+
+    private function buildSubtitlePublicUrl(string $path): string
+    {
+        $safePath = implode('/', array_map('rawurlencode', array_map('rawurldecode', explode('/', ltrim($path, '/')))));
+        return asset('storage/' . $safePath);
+    }
+
+    private function storeVideoSubtitles(Video $video, array $files): void
+    {
+        if (!Schema::hasTable('video_subtitles')) {
+            return;
+        }
+
+        $subtitleDir = 'subtitles/video_' . $video->id;
+
+        foreach ($files as $file) {
+            if (!$file) {
+                continue;
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $mimeType = $file->getClientMimeType();
+            $fileSize = $file->getSize();
+            $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+            $storedPath = $file->storeAs($subtitleDir, $safeName, 'public');
+
+            if (!$storedPath) {
+                continue;
+            }
+
+            if (!$fileSize) {
+                $fileSize = Storage::disk('public')->exists($storedPath)
+                    ? Storage::disk('public')->size($storedPath)
+                    : null;
+            }
+
+            VideoSubtitle::create([
+                'video_id' => $video->id,
+                'label' => pathinfo($originalName, PATHINFO_FILENAME),
+                'language' => null,
+                'path' => $storedPath,
+                'url' => $this->buildSubtitlePublicUrl($storedPath),
+                'mime' => $mimeType,
+                'size' => $fileSize,
+            ]);
+        }
+    }
+
+    private function deleteVideoSubtitleFiles(Video $video): void
+    {
+        $directory = 'subtitles/video_' . $video->id;
+        Storage::disk('public')->deleteDirectory($directory);
     }
 
     private function resolvePublicBaseUrl(): string

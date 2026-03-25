@@ -300,7 +300,12 @@ export default {
         maxMemoryUsage: "200",
         enableHardwareAcceleration: true,
         preloadVideos: true,
-        enableAutoUpdate: true
+        enableAutoUpdate: true,
+
+        // Popup
+        popupWidth: 960,
+        popupHeight: 540,
+        popupPosition: "center"
       },
       confirmMessage: '',
       confirmCallback: null,

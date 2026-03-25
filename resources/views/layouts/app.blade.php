@@ -7,6 +7,9 @@
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo-bm.png') }}">
     <meta name="description" content="Dashboard de controle para aplicação de vídeos agendados">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100..700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Exo+2:ital,wght@0,100..900;1,100..900&family=Exo:ital,wght@0,100..900;1,100..900&family=Fredoka:wght@300..700&family=Glory:ital,wght@0,100..800;1,100..800&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Sunflower:wght@300&family=Unica+One&display=swap" rel="stylesheet">
     <script>
         window.APP_CONFIG = {
             apiEndpoint: @json(config('services.video_api.endpoint'))
@@ -42,7 +45,7 @@
                         <img src="{{ asset('assets/images/logo-bm.png') }}" style="width:100%">
                     </div>
                     <div>
-                        <h6 class="mb-0 text-white">Video Scheduler</h6>
+                        <h6 class="mb-0 text-primary">Video Scheduler</h6>
                         <small class="text-muted">by: Ideias</small>
                     </div>
                 </div>
@@ -62,6 +65,10 @@
                         <i class="bi bi-camera-video"></i>
                         <span>Vídeos</span>
                     </a>
+                    <a href="{{ route('reports') }}" class="nav-btn {{ request()->routeIs('reports') ? 'active' : '' }}">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span>Relatórios</span>
+                    </a>
                     {{--
                     <a href="{{ route('preview') }}" class="nav-btn {{ request()->routeIs('preview') ? 'active' : '' }}">
                         <i class="bi bi-play-circle"></i>
@@ -76,6 +83,31 @@
                         <i class="bi bi-activity"></i>
                         <span>Usuários</span>
                     </a>
+                    @can('isAdmin')
+                    <div class="mt-3 text-uppercase text-muted small" style="letter-spacing:0.08em;">
+                        Administração
+                    </div>
+                    <a href="{{ route('admin.groups') }}" class="nav-btn {{ request()->routeIs('admin.groups') ? 'active' : '' }}">
+                        <i class="bi bi-people"></i>
+                        <span>Grupos</span>
+                    </a>
+                    <a href="{{ route('admin.targets') }}" class="nav-btn {{ request()->routeIs('admin.targets') ? 'active' : '' }}">
+                        <i class="bi bi-diagram-3"></i>
+                        <span>Alvos AD</span>
+                    </a>
+                    <a href="{{ route('admin.clients') }}" class="nav-btn {{ request()->routeIs('admin.clients') ? 'active' : '' }}">
+                        <i class="bi bi-pc-display"></i>
+                        <span>Clientes</span>
+                    </a>
+                    <a href="{{ route('admin.campaigns') }}" class="nav-btn {{ request()->routeIs('admin.campaigns') ? 'active' : '' }}">
+                        <i class="bi bi-flag"></i>
+                        <span>Campanhas</span>
+                    </a>
+                    <a href="{{ route('admin.logs') }}" class="nav-btn {{ request()->routeIs('admin.logs') ? 'active' : '' }}">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span>Logs</span>
+                    </a>
+                    @endcan
                     {{--
                     <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i>

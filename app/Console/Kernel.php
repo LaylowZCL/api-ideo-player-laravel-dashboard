@@ -12,7 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        if (config('ad.group_source') === 'json') {
+            $schedule->command('ad:import-json')->dailyAt('01:00');
+        }
     }
 
     /**

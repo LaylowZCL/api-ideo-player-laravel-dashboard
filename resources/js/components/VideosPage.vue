@@ -108,6 +108,63 @@
     </div>
   </div>
 
+  <!-- Tamanho e Localização do Popup -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="card-title mb-0">Tamanho e Localização do Popup</h5>
+            <small class="text-muted">Configuração aplicada aos clientes.</small>
+          </div>
+          <button class="btn btn-primary btn-sm" @click="savePopupSettings" :disabled="isSavingPopup">
+            {{ isSavingPopup ? 'Salvando...' : 'Aplicar' }}
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small text-muted">Resolução</label>
+              <select class="form-select" v-model="popupSettings.preset" @change="handlePopupPresetChange">
+                <option value="custom">Personalizado</option>
+                <option value="256x144">144p • 256×144 (Internet muito lenta)</option>
+                <option value="426x240">240p • 426×240 (Telemóveis antigos)</option>
+                <option value="320x240">240p • 320×240 (Telemóveis antigos)</option>
+                <option value="640x360">360p • 640×360 (YouTube antigo)</option>
+                <option value="640x480">SD • 640×480</option>
+                <option value="720x480">SD • 720×480</option>
+                <option value="854x480">480p • 854×480 (DVD / transição)</option>
+                <option value="854x480">480p • 854×480 (Básico)</option>
+                <option value="1280x720">720p • 1280×720 (HD leve)</option>
+                <option value="1920x1080">1080p • 1920×1080 (Padrão atual)</option>
+                <option value="2560x1440">1440p • 2560×1440 (Gaming / monitores)</option>
+                <option value="3840x2160">4K • 3840×2160 (Alta qualidade)</option>
+                <option value="7680x4320">8K • 7680×4320 (Futuro)</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-muted">Dimensão (px)</label>
+              <input type="text" class="form-control" :value="`${popupSettings.width} × ${popupSettings.height}`" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-muted">Posição</label>
+              <select class="form-select" v-model="popupSettings.position">
+                <option value="center">Centro</option>
+                <option value="top_left">Superior esquerdo</option>
+                <option value="top_right">Superior direito</option>
+                <option value="bottom_left">Inferior esquerdo</option>
+                <option value="bottom_right">Inferior direito</option>
+              </select>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted">{{ popupSaveStatus }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lista de Vídeos -->
   <div id="videos-list">
     <div v-if="loading" class="text-center py-4">
@@ -269,6 +326,14 @@
                 </div>
               </div>
 
+              <div class="col-md-12">
+                <label for="subtitleFiles" class="form-label">Legendas (.srt)</label>
+                <input type="file" class="form-control" id="subtitleFiles" @change="handleSubtitleUpload" accept=".srt" multiple>
+                <div class="form-text">
+                  Pode selecionar múltiplas legendas para o vídeo.
+                </div>
+              </div>
+
               <div class="col-md-12" v-if="uploadData.file">
                 <div class="alert alert-info">
                   <i class="bi bi-info-circle me-2"></i>
@@ -276,6 +341,18 @@
                   ({{ formatFileSize(uploadData.file.size) }})<br>
                   <span v-if="isReadingDuration">Lendo duração do vídeo...</span>
                   <span v-else>Duração detectada: <strong>{{ uploadData.duration || 'Não identificada' }}</strong></span>
+                </div>
+              </div>
+
+              <div class="col-md-12" v-if="uploadData.subtitles && uploadData.subtitles.length">
+                <div class="alert alert-secondary">
+                  <i class="bi bi-subtitles me-2"></i>
+                  Legendas selecionadas:
+                  <ul class="mb-0 mt-2">
+                    <li v-for="(sub, index) in uploadData.subtitles" :key="index">
+                      {{ sub.name }}
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -450,6 +527,7 @@ data() {
       title: '',
       description: '',
       file: null,
+      subtitles: [],
       duration: '',
       durationSeconds: null
     },
@@ -463,7 +541,16 @@ data() {
       title: '',
       description: '',
       is_active: true
-    }
+    },
+    popupSettings: {
+      width: 960,
+      height: 540,
+      position: 'center',
+      preset: 'custom'
+    },
+    systemSettingsPayload: null,
+    popupSaveStatus: 'Carregando configurações...',
+    isSavingPopup: false
   };
 },
 mounted() {
@@ -472,8 +559,19 @@ mounted() {
   this.editVideoModal = new Modal(document.getElementById('editVideoModal'));
   this.previewModal = new Modal(document.getElementById('previewModal'));
   this.loadVideos();
+  this.loadPopupSettings();
 },
-methods: {
+  methods: {
+  handlePopupPresetChange() {
+    if (this.popupSettings.preset === 'custom') {
+      return;
+    }
+    const [width, height] = this.popupSettings.preset.split('x').map(Number);
+    if (Number.isFinite(width) && Number.isFinite(height)) {
+      this.popupSettings.width = width;
+      this.popupSettings.height = height;
+    }
+  },
   async loadVideos() {
     this.loading = true;
     try {
@@ -501,6 +599,73 @@ methods: {
     } finally {
       this.isRefreshing = false;
     }
+  },
+  async loadPopupSettings() {
+    try {
+      const response = await axios.get('/api/system-settings');
+      if (response.data && response.data.success) {
+        this.systemSettingsPayload = response.data.settings;
+        this.popupSettings = {
+          width: response.data.settings.popupWidth || 960,
+          height: response.data.settings.popupHeight || 540,
+          position: response.data.settings.popupPosition || 'center',
+          preset: this.matchResolutionPreset(
+            response.data.settings.popupWidth || 960,
+            response.data.settings.popupHeight || 540
+          )
+        };
+        this.popupSaveStatus = 'Configurações carregadas.';
+      } else {
+        this.popupSaveStatus = 'Não foi possível carregar as configurações.';
+      }
+    } catch (error) {
+      this.popupSaveStatus = 'Erro ao carregar configurações.';
+    }
+  },
+  async savePopupSettings() {
+    if (!this.systemSettingsPayload) {
+      this.popupSaveStatus = 'Configurações indisponíveis.';
+      return;
+    }
+
+    this.isSavingPopup = true;
+    try {
+      const payload = {
+        ...this.systemSettingsPayload,
+        popupWidth: this.popupSettings.width,
+        popupHeight: this.popupSettings.height,
+        popupPosition: this.popupSettings.position
+      };
+      const response = await axios.post('/api/system-settings', payload);
+      if (response.data && response.data.success) {
+        this.systemSettingsPayload = response.data.settings;
+        this.popupSaveStatus = 'Configurações aplicadas com sucesso.';
+      } else {
+        this.popupSaveStatus = 'Falha ao salvar configurações.';
+      }
+    } catch (error) {
+      this.popupSaveStatus = 'Erro ao salvar configurações.';
+    } finally {
+      this.isSavingPopup = false;
+    }
+  },
+  matchResolutionPreset(width, height) {
+    const key = `${width}x${height}`;
+    const allowed = [
+      '256x144',
+      '426x240',
+      '320x240',
+      '640x360',
+      '640x480',
+      '720x480',
+      '854x480',
+      '1280x720',
+      '1920x1080',
+      '2560x1440',
+      '3840x2160',
+      '7680x4320'
+    ];
+    return allowed.includes(key) ? key : 'custom';
   },
 
   filterVideos() {
@@ -686,14 +851,14 @@ methods: {
   },
 
   showUploadModal() {
-    this.uploadData = { title: '', description: '', file: null, duration: '', durationSeconds: null };
+    this.uploadData = { title: '', description: '', file: null, subtitles: [], duration: '', durationSeconds: null };
     this.isReadingDuration = false;
     this.uploadModal.show();
   },
 
   closeUploadModal() {
     this.uploadModal.hide();
-    this.uploadData = { title: '', description: '', file: null, duration: '', durationSeconds: null };
+    this.uploadData = { title: '', description: '', file: null, subtitles: [], duration: '', durationSeconds: null };
     this.isReadingDuration = false;
   },
 
@@ -718,6 +883,11 @@ methods: {
     } finally {
       this.isReadingDuration = false;
     }
+  },
+
+  handleSubtitleUpload(event) {
+    const files = Array.from(event.target.files || []);
+    this.uploadData.subtitles = files.filter(file => file.name.toLowerCase().endsWith('.srt'));
   },
 
   async uploadVideo() {
@@ -745,6 +915,12 @@ methods: {
       formData.append('description', this.uploadData.description || '');
       formData.append('video', this.uploadData.file);
       formData.append('duration_seconds', this.uploadData.durationSeconds);
+
+      if (this.uploadData.subtitles && this.uploadData.subtitles.length) {
+        this.uploadData.subtitles.forEach(file => {
+          formData.append('subtitles[]', file);
+        });
+      }
 
       console.log(this.uploadData.file);
 

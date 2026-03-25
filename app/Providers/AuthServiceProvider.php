@@ -24,22 +24,29 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // Definição dos Gates baseados em user_type
+        // Gate para super admin (acesso total)
+        $gate->define('isSuperAdmin', function ($user) {
+            return $user->isSuperAdmin();
+        });
+
+        // Gate para admin (inclui super admin)
         $gate->define('isAdmin', function ($user) {
-            return $user->user_type === 'admin';
+            return $user->isAdmin();
         });
 
+        // Gate para manager (inclui admin e super admin)
         $gate->define('isManager', function ($user) {
-            return $user->user_type === 'manager' || $user->user_type === 'admin';
+            return $user->isManager();
         });
 
+        // Gate para usuário regular (todos têm essa permissão)
         $gate->define('isUser', function ($user) {
-            return $user->user_type === 'user' || $user->user_type === 'manager' || $user->user_type === 'admin';
+            return true;
         });
-        
-        // Gate específico para apenas manager (não admin)
+
+        // Gate específico para apenas manager (não admin, não super admin)
         $gate->define('isManagerOnly', function ($user) {
-            return $user->user_type === 'manager';
+            return $user->roleName() === 'manager';
         });
     }
 }

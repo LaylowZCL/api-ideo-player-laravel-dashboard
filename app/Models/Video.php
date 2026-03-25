@@ -23,4 +23,9 @@ class Video extends Model
     {
         return $this->hasMany(Schedule::class);
     }
+
+    public function subtitles()
+    {
+        return $this->hasMany(VideoSubtitle::class);
+    }
 }

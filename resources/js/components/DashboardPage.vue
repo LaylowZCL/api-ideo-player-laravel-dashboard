@@ -256,15 +256,28 @@
             </div>
         </div>
 
-        <!-- Relatórios Recentes de Vídeos -->
-        <div class="row mt-4" v-if="hasData">
+        <!-- Resumo de Relatórios -->
+        <div class="row mt-4 g-4" v-if="hasData">
             <div class="col-12">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Relatórios Recentes de Vídeos</h5>
-                        <span class="badge bg-info">{{ recentReports.length }} relatórios</span>
+                        <div>
+                            <h5 class="card-title mb-0">Resumo de Relatórios</h5>
+                            <small class="text-muted">Visão geral. Detalhes completos na página dedicada.</small>
+                        </div>
+                        <a class="btn btn-outline-secondary btn-sm" href="/relatorios">
+                            Ver relatório completo
+                        </a>
                     </div>
                     <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3" v-for="stat in reportStats" :key="stat.title">
+                                <div class="p-3 bg-secondary rounded">
+                                    <div class="small text-muted">{{ stat.title }}</div>
+                                    <div class="h5 mb-0">{{ stat.value }}</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead>
@@ -273,68 +286,25 @@
                                         <th>Evento</th>
                                         <th>Plataforma</th>
                                         <th>Horário</th>
-                                        <th>Duração</th>
-                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(report, index) in paginatedRecentReports" :key="index">
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-play-circle fs-5 text-primary"></i>
-                                                <span class="fw-medium">{{ report.video_title }}</span>
-                                            </div>
-                                        </td>
+                                    <tr v-for="(report, index) in recentReports.slice(0, 5)" :key="index">
+                                        <td class="fw-medium">{{ report.video_title }}</td>
                                         <td>{{ formatEventTypeLabel(report.event_type) }}</td>
                                         <td>
                                             <span class="badge bg-secondary">{{ formatPlatformLabel(report.platform) }}</span>
                                         </td>
                                         <td>{{ report.viewed_at }}</td>
-                                        <td>{{ report.duration }}s</td>
-                                        <td>
-                                            <span v-if="report.completed" class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Concluído
-                                            </span>
-                                            <span v-else class="badge bg-warning">
-                                                <i class="bi bi-pause-circle me-1"></i>
-                                                Parcial
-                                            </span>
-                                        </td>
                                     </tr>
                                     <tr v-if="recentReports.length === 0">
-                                        <td colspan="6" class="text-center py-4 text-muted">
+                                        <td colspan="4" class="text-center py-4 text-muted">
                                             <i class="bi bi-camera-video fs-1"></i>
                                             <p class="mt-2 mb-0">Nenhum relatório disponível</p>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
-                        </div>
-                        <div v-if="recentReports.length > reportsPerPage" class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">
-                                Mostrando {{ paginationStartItem }}-{{ paginationEndItem }} de {{ recentReports.length }}
-                            </small>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Paginação dos relatórios">
-                                <button class="btn btn-outline-secondary" @click="goToPreviousReportsPage" :disabled="reportsCurrentPage === 1">
-                                    Anterior
-                                </button>
-                                <button
-                                    v-for="page in reportsPageNumbers"
-                                    :key="page"
-                                    class="btn"
-                                    :class="page === reportsCurrentPage ? 'btn-primary' : 'btn-outline-secondary'"
-                                    @click="goToReportsPage(page)"
-                                >
-                                    {{ page }}
-                                </button>
-                                <button class="btn btn-outline-secondary disabled">
-                                    de {{ reportsTotalPages }}
-                                </button>
-                                <button class="btn btn-outline-secondary" @click="goToNextReportsPage" :disabled="reportsCurrentPage === reportsTotalPages">
-                                    Próxima
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -363,6 +333,7 @@ export default {
             recentReports: [],
             reportsCurrentPage: 1,
             reportsPerPage: 10,
+
             
             // Estado
             isLoading: false,

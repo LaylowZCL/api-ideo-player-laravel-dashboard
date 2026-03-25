@@ -71,6 +71,48 @@
             </div>
           </div>
 
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="schedule-campaign" class="form-label">Campanha</label>
+              <select class="form-select" id="schedule-campaign" v-model="formData.campaign_id">
+                <option :value="null">Sem campanha</option>
+                <option v-for="campaign in campaigns" :key="campaign.id" :value="campaign.id">
+                  {{ campaign.name }} (P{{ campaign.priority || 0 }})
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="schedule-priority" class="form-label">Prioridade</label>
+              <input type="number" class="form-control" id="schedule-priority"
+                     v-model.number="formData.priority"
+                     min="0" max="100" step="1">
+              <div class="form-text">Maior prioridade vence em caso de conflito.</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Público-alvo</label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small text-muted">Grupos (AD)</label>
+                <select class="form-select" multiple v-model="formData.target_groups">
+                  <option v-for="group in adGroups" :key="group.id" :value="group.id">
+                    {{ group.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small text-muted">Clientes específicos</label>
+                <select class="form-select" multiple v-model="formData.target_clients">
+                  <option v-for="client in clients" :key="client.id" :value="client.id">
+                    {{ client.client_id }}{{ client.hostname ? ` (${client.hostname})` : '' }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="form-text">Se não selecionar grupos nem clientes, o agendamento é global.</div>
+          </div>
+
           <div class="mb-3">
             <label class="form-label">Dias da Semana *</label>
             <div class="d-flex flex-wrap gap-2">
@@ -190,17 +232,36 @@
                     <i class="bi bi-play-circle me-1"></i>
                     {{ schedule.video_url }}
                   </span>
+                  <span v-if="schedule.campaign">
+                    <i class="bi bi-flag me-1"></i>
+                    {{ schedule.campaign.name }}
+                  </span>
+                  <span>
+                    <i class="bi bi-bar-chart me-1"></i>
+                    P{{ schedule.priority || 0 }}
+                  </span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <i class="bi bi-calendar3 text-muted"></i>
                   <div class="d-flex gap-1">
                     <span class="badge" 
                           :class="isToday(day) ? 'bg-primary' : 'bg-secondary bg-opacity-50'"
-                          v-for="day in schedule.days" 
-                          :key="day">
+                      v-for="day in schedule.days" 
+                      :key="day">
                       {{ day }}
                     </span>
                   </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-2 small text-muted">
+                  <i class="bi bi-people text-muted"></i>
+                  <span v-if="!schedule.target_groups?.length && !schedule.target_clients?.length">
+                    Global
+                  </span>
+                  <span v-else>
+                    <span v-if="schedule.target_groups?.length">Grupos: {{ schedule.target_groups.length }}</span>
+                    <span v-if="schedule.target_groups?.length && schedule.target_clients?.length"> • </span>
+                    <span v-if="schedule.target_clients?.length">Clientes: {{ schedule.target_clients.length }}</span>
+                  </span>
                 </div>
               </div>
               <div class="d-flex align-items-center gap-2">
@@ -277,6 +338,9 @@ export default {
       editingSchedule: null,
       loading: false,
       videos: [],
+      campaigns: [],
+      adGroups: [],
+      clients: [],
       daysOfWeek: [
         { short: "seg", full: "Segunda" },
         { short: "ter", full: "Terça" },
@@ -292,7 +356,11 @@ export default {
         time: '',
         days: [],
         monitor: 'Principal',
-        active: true
+        active: true,
+        campaign_id: null,
+        priority: 0,
+        target_groups: [],
+        target_clients: []
       },
       schedules: [],
       stats: {
@@ -320,7 +388,12 @@ export default {
   },
   computed: {
     selectedVideo() {
-      return this.videos.find(v => v.name === this.formData.video_url);
+      return this.videos.find(v =>
+        v.name === this.formData.video_url
+        || v.title === this.formData.video_url
+        || v.url === this.formData.video_url
+        || v.id === this.formData.video_id
+      );
     },
     todayShort() {
       const daysMap = {
@@ -343,6 +416,9 @@ export default {
     this.loadCurrentDay();
     this.loadSchedules();
     this.loadVideos();
+    this.loadCampaigns();
+    this.loadAdGroups();
+    this.loadClients();
   },
   methods: {
     loadCurrentDay() {
@@ -405,6 +481,36 @@ export default {
         this.showToast('Erro', 'Falha ao carregar lista de vídeos', 'error', 'bi-exclamation-triangle');
       }
     },
+
+    async loadCampaigns() {
+      try {
+        const response = await axios.get('/api/campaigns');
+        this.campaigns = response.data.campaigns || [];
+      } catch (error) {
+        console.error('Erro ao carregar campanhas:', error);
+        this.showToast('Erro', 'Falha ao carregar campanhas', 'error', 'bi-exclamation-triangle');
+      }
+    },
+
+    async loadAdGroups() {
+      try {
+        const response = await axios.get('/api/ad-groups');
+        this.adGroups = response.data.groups || [];
+      } catch (error) {
+        console.error('Erro ao carregar grupos:', error);
+        this.showToast('Erro', 'Falha ao carregar grupos', 'error', 'bi-exclamation-triangle');
+      }
+    },
+
+    async loadClients() {
+      try {
+        const response = await axios.get('/api/clients');
+        this.clients = response.data.clients || [];
+      } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
+        this.showToast('Erro', 'Falha ao carregar clientes', 'error', 'bi-exclamation-triangle');
+      }
+    },
     
     openCreateScheduleModal() {
       this.editingSchedule = null;
@@ -419,7 +525,11 @@ export default {
         time: '',
         days: [],
         monitor: 'Principal',
-        active: true
+        active: true,
+        campaign_id: null,
+        priority: 0,
+        target_groups: [],
+        target_clients: []
       };
       this.editingSchedule = null;
     },
@@ -439,14 +549,25 @@ export default {
     },
     
     editSchedule(schedule) {
+      const selectedVideo = this.videos.find(video => {
+        return video.id === schedule.video_id
+          || video.name === schedule.video_url
+          || video.title === schedule.video_url
+          || video.url === schedule.video_url;
+      });
+
       this.editingSchedule = schedule;
       this.formData = {
         title: schedule.title,
-        video_url: schedule.video_url,
+        video_url: selectedVideo ? selectedVideo.name : schedule.video_url,
         time: schedule.time,
         days: schedule.days || [],
         monitor: schedule.monitor,
-        active: schedule.active
+        active: schedule.active,
+        campaign_id: schedule.campaign_id || null,
+        priority: schedule.priority || 0,
+        target_groups: schedule.target_groups || [],
+        target_clients: schedule.target_clients || []
       };
       this.scheduleModal.show();
     },
@@ -500,7 +621,17 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao atualizar agendamento:', error);
-        this.showToast('Erro', error.response?.data?.message || 'Falha ao atualizar agendamento', 'error', 'bi-exclamation-triangle');
+        const validationErrors = error.response?.data?.errors;
+        const firstValidationError = validationErrors
+          ? Object.values(validationErrors).flat()[0]
+          : null;
+
+        this.showToast(
+          'Erro',
+          firstValidationError || error.response?.data?.message || 'Falha ao atualizar agendamento',
+          'error',
+          'bi-exclamation-triangle'
+        );
       } finally {
         this.loading = false;
       }

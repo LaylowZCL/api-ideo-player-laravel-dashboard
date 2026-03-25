@@ -8,6 +8,9 @@
     <title>@yield('title', 'VideoScheduler')</title>
     <meta name="description" content="Dashboard de controle para aplicação de vídeos agendados">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100..700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Exo+2:ital,wght@0,100..900;1,100..900&family=Exo:ital,wght@0,100..900;1,100..900&family=Fredoka:wght@300..700&family=Glory:ital,wght@0,100..800;1,100..800&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Sunflower:wght@300&family=Unica+One&display=swap" rel="stylesheet">
     <script>
         window.APP_CONFIG = {
             apiEndpoint: @json(config('services.video_api.endpoint'))
@@ -86,6 +89,7 @@
                 padding-top: 40px;
                 padding-bottom: 40px;
                 background-color: #023d7c;
+                font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
             }
 
             .form-signin {
@@ -150,6 +154,47 @@
             }
             h1, label ,a ,p {
                 color: #ba9a69 !important;
+            }
+
+            .otp-card {
+                text-align: left;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+                font-size: 0.9rem;
+            }
+
+            .otp-value {
+                font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+                font-weight: 600;
+                word-break: break-all;
+                overflow-wrap: anywhere;
+            }
+
+            .otp-raw {
+                font-size: 0.78rem;
+                line-height: 1.3;
+                word-break: break-all;
+                overflow-wrap: anywhere;
+            }
+
+            .qr-image {
+                max-width: 200px;
+                width: 60vw;
+                height: auto;
+                border-radius: 12px;
+                background: #fff;
+                padding: 8px;
+            }
+
+            @media (max-width: 420px) {
+                .form-signin {
+                    max-width: 92vw;
+                    padding: 20px;
+                }
+
+                .otp-raw {
+                    display: none;
+                }
             }
         </style>
 

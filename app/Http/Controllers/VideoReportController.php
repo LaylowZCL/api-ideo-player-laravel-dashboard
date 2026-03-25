@@ -187,10 +187,96 @@ class VideoReportController extends Controller
                     'duration' => $report->playback_duration
                 ];
             });
+
+        $stats['event_breakdown'] = $query->clone()
+            ->selectRaw('event_type, COUNT(*) as count')
+            ->groupBy('event_type')
+            ->orderBy('count', 'desc')
+            ->get()
+            ->pluck('count', 'event_type');
+
+        $stats['top_videos'] = $query->clone()
+            ->selectRaw('video_id, COALESCE(video_title, CONCAT("Vídeo ", video_id)) as video_title, COUNT(*) as count')
+            ->groupBy('video_id', 'video_title')
+            ->orderBy('count', 'desc')
+            ->limit(8)
+            ->get();
         
         return response()->json([
             'success' => true,
             'stats' => $stats
+        ]);
+    }
+
+    public function index(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'video_id' => 'nullable|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'platform' => 'nullable|string|max:50',
+            'event_type' => 'nullable|string|max:50',
+            'completed' => 'nullable|boolean',
+            'per_page' => 'nullable|integer|min:5|max:200'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+
+        $query = VideoReport::query();
+
+        if (!empty($data['video_id'])) {
+            $query->where('video_id', $data['video_id']);
+        }
+
+        if (!empty($data['start_date'])) {
+            $query->whereDate('viewed_at', '>=', $data['start_date']);
+        }
+
+        if (!empty($data['end_date'])) {
+            $query->whereDate('viewed_at', '<=', $data['end_date']);
+        }
+
+        if (!empty($data['platform'])) {
+            $query->where('platform', $data['platform']);
+        }
+
+        if (!empty($data['event_type'])) {
+            $query->where('event_type', $data['event_type']);
+        }
+
+        if (array_key_exists('completed', $data)) {
+            $query->where('completed', (bool) $data['completed']);
+        }
+
+        $perPage = $data['per_page'] ?? 25;
+        $reports = $query->orderBy('viewed_at', 'desc')->paginate($perPage);
+
+        $reports->getCollection()->transform(function ($report) {
+            return [
+                'id' => $report->id,
+                'video_id' => $report->video_id,
+                'video_title' => $report->video_title ?? ('Vídeo ' . $report->video_id),
+                'event_type' => $report->event_type,
+                'platform' => $report->platform ?? 'unknown',
+                'viewed_at' => $report->viewed_at ? $report->viewed_at->toIso8601String() : null,
+                'duration' => $report->playback_duration,
+                'completed' => (bool) $report->completed,
+                'session_id' => $report->session_id,
+                'app_version' => $report->app_version,
+                'ip_address' => $report->ip_address
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'reports' => $reports
         ]);
     }
 

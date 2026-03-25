@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Video;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -14,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use App\Models\VideoReport;
 // use App\Models\Log;
 use Illuminate\Support\Facades\Log;
+use App\Services\Targeting\CampaignTargetingService;
 
 class ClientAppController extends Controller
 {
@@ -35,7 +37,12 @@ class ClientAppController extends Controller
         $diaAtual = $diasDaSemana[now()->format('l')];
 
         // Obtém os horários agendados que estão ativos e no dia atual
-        $schedules = Schedule::where('active', true)->whereJsonContains('days', $diaAtual)->get();
+        $request = request();
+        $client = $this->resolveClient($request);
+        $username = $this->resolveUsername($request);
+        [$query, $context] = $this->querySchedulesForClient($client, $diaAtual, $username);
+        $schedules = app(CampaignTargetingService::class)
+            ->sortSchedules($query->get(), $context, $client);
 
         // Extraindo os horários dos objetos Schedule
         $scheduleTimes = $schedules->pluck('time')->toArray();
@@ -45,7 +52,8 @@ class ClientAppController extends Controller
         ]);
     }
 
-    public function scheduledVideos(){
+    public function scheduledVideos()
+    {
         $diasDaSemana = [
             'Sunday' => 'dom',
             'Monday' => 'seg',
@@ -57,10 +65,12 @@ class ClientAppController extends Controller
         ];
 
         $diaAtual = $diasDaSemana[now()->format('l')];
-        $schedules = Schedule::where('active', true)
-            ->whereJsonContains('days', $diaAtual)
-            ->orderBy('time')
-            ->get()
+        $request = request();
+        $client = $this->resolveClient($request);
+        $username = $this->resolveUsername($request);
+        [$query, $context] = $this->querySchedulesForClient($client, $diaAtual, $username);
+        $schedules = app(CampaignTargetingService::class)
+            ->sortSchedules($query->with(['campaign'])->get(), $context, $client)
             ->map(function ($schedule) {
                 $video = $this->resolveVideoForSchedule($schedule);
                 $resolvedUrl = $video?->url ?: $schedule->video_url;
@@ -70,20 +80,117 @@ class ClientAppController extends Controller
                     'title' => $schedule->title,
                     'video_id' => $video?->id,
                     'video_url' => $this->toSafeVideoUrl($resolvedUrl),
+                    'video_size' => $video?->size ?: 0,
+                    'subtitle_url' => $schedule->subtitle_url ? $this->toSafeVideoUrl($schedule->subtitle_url) : null,
+                    'subtitles' => $this->formatSubtitlesPayload($video),
                     'time' => $schedule->time,
                     'days' => $schedule->days,
                     'monitor' => $schedule->monitor,
                     'active' => (bool) $schedule->active,
                     'duration' => $video?->duration ?: ($schedule->duration ?: '0:00'),
+                    'priority' => $schedule->priority ?? 0,
+                    'campaign' => $schedule->campaign ? [
+                        'id' => $schedule->campaign->id,
+                        'name' => $schedule->campaign->name,
+                        'priority' => $schedule->campaign->priority,
+                    ] : null,
+                    'window_config' => $schedule->window_config ?? [
+                        'position' => [
+                            'anchor' => 'bottom-right',
+                            'x' => null,
+                            'y' => null,
+                            'margin' => 50,
+                        ],
+                        'size' => [
+                            'width' => 854,
+                            'height' => 480,
+                        ],
+                    ],
                     'created_at' => $schedule->created_at,
                     'updated_at' => $schedule->updated_at,
                 ];
             });
 
-        return response()->json([
-            'videos' => $schedules
-        ]);
+        $currentTime = now()->format('H:i');
+        $nextVideo = $schedules->first(function ($schedule) use ($currentTime) {
+            return $schedule['time'] >= $currentTime;
+        }) ?? $schedules->first();
 
+        return response()->json([
+            'videos' => $schedules,
+            'next_video' => $nextVideo,
+            'selection_strategy' => 'time_campaign_priority'
+        ]);
+    }
+
+    public function scheduledVideosNext()
+    {
+        $diasDaSemana = [
+            'Sunday' => 'dom',
+            'Monday' => 'seg',
+            'Tuesday' => 'ter',
+            'Wednesday' => 'qua',
+            'Thursday' => 'qui',
+            'Friday' => 'sex',
+            'Saturday' => 'sab',
+        ];
+
+        $diaAtual = $diasDaSemana[now()->format('l')];
+        $request = request();
+        $client = $this->resolveClient($request);
+        $username = $this->resolveUsername($request);
+        [$query, $context] = $this->querySchedulesForClient($client, $diaAtual, $username);
+        $schedules = app(CampaignTargetingService::class)
+            ->sortSchedules($query->with(['campaign'])->get(), $context, $client)
+            ->map(function ($schedule) {
+                $video = $this->resolveVideoForSchedule($schedule);
+                $resolvedUrl = $video?->url ?: $schedule->video_url;
+
+                return [
+                    'id' => $schedule->id,
+                    'title' => $schedule->title,
+                    'video_id' => $video?->id,
+                    'video_url' => $this->toSafeVideoUrl($resolvedUrl),
+                    'video_size' => $video?->size ?: 0,
+                    'subtitle_url' => $schedule->subtitle_url ? $this->toSafeVideoUrl($schedule->subtitle_url) : null,
+                    'subtitles' => $this->formatSubtitlesPayload($video),
+                    'time' => $schedule->time,
+                    'days' => $schedule->days,
+                    'monitor' => $schedule->monitor,
+                    'active' => (bool) $schedule->active,
+                    'duration' => $video?->duration ?: ($schedule->duration ?: '0:00'),
+                    'priority' => $schedule->priority ?? 0,
+                    'campaign' => $schedule->campaign ? [
+                        'id' => $schedule->campaign->id,
+                        'name' => $schedule->campaign->name,
+                        'priority' => $schedule->campaign->priority,
+                    ] : null,
+                    'window_config' => $schedule->window_config ?? [
+                        'position' => [
+                            'anchor' => 'bottom-right',
+                            'x' => null,
+                            'y' => null,
+                            'margin' => 50,
+                        ],
+                        'size' => [
+                            'width' => 854,
+                            'height' => 480,
+                        ],
+                    ],
+                    'created_at' => $schedule->created_at,
+                    'updated_at' => $schedule->updated_at,
+                ];
+            });
+
+        $currentTime = now()->format('H:i');
+        $nextVideo = $schedules->first(function ($schedule) use ($currentTime) {
+            return $schedule['time'] >= $currentTime;
+        }) ?? $schedules->first();
+
+        return response()->json([
+            'next_video' => $nextVideo,
+            'selection_strategy' => 'time_campaign_priority'
+        ]);
     }
 
     public function storeReport(Request $request)
@@ -113,7 +220,7 @@ class ClientAppController extends Controller
                 'errors' => $validator->errors()->toArray(),
                 'data' => $request->all()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid data',
@@ -123,10 +230,10 @@ class ClientAppController extends Controller
 
         try {
             $data = $validator->validated();
-            
+
             // Extrair dados do dispositivo
             $deviceInfo = $data['device_info'] ?? [];
-            
+
             // Criar o report
             $videoId = $data['video_id'] ?? null;
             if ($videoId && !Video::whereKey($videoId)->exists()) {
@@ -166,7 +273,6 @@ class ClientAppController extends Controller
                 'message' => 'Video report stored successfully',
                 'report_id' => $report->id
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('Error storing video report', [
                 'error' => $e->getMessage(),
@@ -180,7 +286,7 @@ class ClientAppController extends Controller
             ], 500);
         }
     }
-    
+
     // Helper methods
     private function detectPlatform($userAgent)
     {
@@ -200,7 +306,7 @@ class ClientAppController extends Controller
         // Aqui você pode atualizar estatísticas na tabela de vídeos
         // Por exemplo, incrementar um contador de visualizações completas
         // Se você tiver um modelo Video:
-        
+
         // if ($video = \App\Models\Video::find($videoId)) {
         //     $video->increment('completed_views');
         //     $video->last_viewed_at = now();
@@ -211,7 +317,11 @@ class ClientAppController extends Controller
     private function resolveVideoForSchedule(Schedule $schedule): ?Video
     {
         if (Schema::hasColumn('schedules', 'video_id') && !empty($schedule->video_id)) {
-            $video = Video::find($schedule->video_id);
+            $videoQuery = Video::query();
+            if (Schema::hasTable('video_subtitles')) {
+                $videoQuery->with('subtitles');
+            }
+            $video = $videoQuery->find($schedule->video_id);
             if ($video) {
                 return $video;
             }
@@ -225,13 +335,81 @@ class ClientAppController extends Controller
         $basename = rawurldecode(basename($path));
         $withoutTimestampPrefix = preg_replace('/^\d+_/', '', $basename);
 
-        return Video::query()
+        $query = Video::query();
+        if (Schema::hasTable('video_subtitles')) {
+            $query->with('subtitles');
+        }
+
+        return $query
             ->where('name', $basename)
             ->orWhere('name', $withoutTimestampPrefix)
             ->orWhere('url', 'like', '%/' . rawurlencode($basename))
             ->orWhere('url', 'like', '%/' . rawurlencode($withoutTimestampPrefix))
             ->orderByDesc('cached')
             ->first();
+    }
+
+    private function formatSubtitlesPayload(?Video $video): array
+    {
+        if (!$video || !Schema::hasTable('video_subtitles')) {
+            return [];
+        }
+
+        return $video->subtitles->map(function ($subtitle) {
+            return [
+                'id' => $subtitle->id,
+                'label' => $subtitle->label,
+                'language' => $subtitle->language,
+                'url' => $this->toSafeVideoUrl($subtitle->url),
+            ];
+        })->values()->all();
+    }
+
+    private function resolveClient(Request $request): ?Client
+    {
+        $clientId = $request->header('X-Client-ID', $request->input('client_id'));
+        if (!$clientId) {
+            $clientId = $request->header('X-Hostname', $request->input('hostname'));
+        }
+        if (!$clientId) {
+            return null;
+        }
+
+        $clientId = mb_strtolower(trim($clientId));
+
+        $client = Client::firstOrCreate(
+            ['client_id' => $clientId],
+            [
+                'first_seen_at' => now(),
+                'last_seen_at' => now(),
+                'ip_address' => $request->ip(),
+            ]
+        );
+
+        return $client->load('adGroups');
+    }
+
+    private function querySchedulesForClient(?Client $client, string $diaAtual, ?string $username = null): array
+    {
+        $machineName = $client?->client_id;
+        $targeting = app(CampaignTargetingService::class);
+        $context = $targeting->getTargetContext($client, $username, $machineName);
+        $query = $targeting->buildQuery($client, $diaAtual, $username, $machineName);
+
+        return [$query, $context];
+    }
+
+    private function resolveUsername(Request $request): ?string
+    {
+        $username = $request->input('username', $request->header('X-User'));
+        if (!$username) {
+            $username = $request->header('X-Username');
+        }
+        if (!$username) {
+            return null;
+        }
+
+        return trim($username);
     }
 
     private function toSafeVideoUrl(?string $url): ?string
@@ -245,7 +423,7 @@ class ClientAppController extends Controller
             return $url;
         }
 
-        $segments = array_filter(explode('/', ltrim($parts['path'] ?? '', '/')), fn ($part) => $part !== '');
+        $segments = array_filter(explode('/', ltrim($parts['path'] ?? '', '/')), fn($part) => $part !== '');
         $safeSegments = array_map(function ($segment) {
             return rawurlencode(rawurldecode($segment));
         }, $segments);
@@ -261,5 +439,86 @@ class ClientAppController extends Controller
         }
 
         return $safeUrl;
+    }
+
+    /**
+     * Serve subtitle file for a schedule
+     * 
+     * GET /api/subtitles/{schedule_id}
+     */
+    public function getSubtitle($scheduleId)
+    {
+        try {
+            $schedule = Schedule::findOrFail($scheduleId);
+
+            // Se não tem subtitle_url, retorna 404
+            if (empty($schedule->subtitle_url)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No subtitle available for this schedule'
+                ], 404);
+            }
+
+            // Se for URL remota, faz proxy do arquivo
+            if (filter_var($schedule->subtitle_url, FILTER_VALIDATE_URL)) {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::timeout(30)->get($schedule->subtitle_url);
+
+                    if ($response->successful()) {
+                        return response($response->body())
+                            ->header('Content-Type', 'text/plain; charset=utf-8')
+                            ->header('Content-Disposition', 'inline; filename=' . basename($schedule->subtitle_url));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error fetching remote subtitle', [
+                        'url' => $schedule->subtitle_url,
+                        'error' => $e->getMessage()
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to fetch subtitle'
+                    ], 500);
+                }
+            }
+
+            // Se for caminho local no storage
+            if (Storage::disk('public')->exists($schedule->subtitle_url)) {
+                $content = Storage::disk('public')->get($schedule->subtitle_url);
+
+                return response($content)
+                    ->header('Content-Type', 'text/plain; charset=utf-8')
+                    ->header('Content-Disposition', 'inline; filename=' . basename($schedule->subtitle_url));
+            }
+
+            // Se for caminho relativo public/
+            $publicPath = public_path($schedule->subtitle_url);
+            if (file_exists($publicPath)) {
+                $content = file_get_contents($publicPath);
+
+                return response($content)
+                    ->header('Content-Type', 'text/plain; charset=utf-8')
+                    ->header('Content-Disposition', 'inline; filename=' . basename($schedule->subtitle_url));
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Subtitle file not found'
+            ], 404);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule not found'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Error serving subtitle', [
+                'schedule_id' => $scheduleId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
     }
 }

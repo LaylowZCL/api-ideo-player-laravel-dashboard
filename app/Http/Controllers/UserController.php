@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -109,6 +110,12 @@ class UserController extends Controller
                 'user_type' => $request->user_type
             ]);
 
+            app(AuditLogService::class)->log('user.create', 'success', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'user_type' => $user->user_type,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Usuário criado com sucesso',
@@ -123,6 +130,10 @@ class UserController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('user.create', 'failed', [
+                'email' => $request->email,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao criar usuário: ' . $e->getMessage()
@@ -245,6 +256,11 @@ class UserController extends Controller
             
             $user->save();
 
+            app(AuditLogService::class)->log('user.update', 'success', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Usuário atualizado com sucesso',
@@ -259,6 +275,10 @@ class UserController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('user.update', 'failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao atualizar usuário: ' . $e->getMessage()
@@ -309,12 +329,21 @@ class UserController extends Controller
         try {
             $user->delete();
 
+            app(AuditLogService::class)->log('user.delete', 'success', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Usuário removido com sucesso'
             ]);
 
         } catch (\Exception $e) {
+            app(AuditLogService::class)->log('user.delete', 'failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ], 'error');
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao remover usuário: ' . $e->getMessage()
