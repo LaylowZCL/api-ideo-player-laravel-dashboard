@@ -27,36 +27,27 @@ class ImportAdGroupJson extends Command
             return self::FAILURE;
         }
 
-        $raw = json_decode(file_get_contents($resolvedPath), true);
-        if (!is_array($raw)) {
-            $this->error('JSON inválido.');
+        $raw = $jsonService->getTargetRecordsFromPath($resolvedPath);
+        if (empty($raw)) {
+            $this->error('JSON inválido, vazio ou com codificação não suportada.');
             return self::FAILURE;
         }
 
         $byMachine = [];
         $targets = [];
         foreach ($raw as $record) {
-            if (!is_array($record)) {
-                continue;
-            }
-
-            $normalized = $jsonService->normalizeTargetRecord($record);
-            if ($normalized === null) {
-                continue;
-            }
-
-            $machineKey = $normalized['machine'];
-            $groupName = $normalized['group'];
-            $userKey = $normalized['user'];
+            $machineKey = $record['machine'];
+            $groupName = $record['group'];
+            $userKey = $record['user'];
 
             $byMachine[$machineKey][] = $groupName;
             $targets[] = [
                 'machine' => $machineKey,
                 'user' => $userKey,
-                'user_display_name' => $normalized['name'] ?? null,
-                'user_email' => $normalized['email'] ?? null,
+                'user_display_name' => $record['name'] ?? null,
+                'user_email' => $record['email'] ?? null,
                 'group' => $groupName,
-                'effective_at' => $this->parseDate($normalized['effective_at']),
+                'effective_at' => $this->parseDate($record['effective_at']),
             ];
         }
 

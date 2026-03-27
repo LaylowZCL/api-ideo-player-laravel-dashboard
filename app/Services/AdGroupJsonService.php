@@ -13,6 +13,11 @@ class AdGroupJsonService
             return [];
         }
 
+        return $this->getTargetRecordsFromPath($path);
+    }
+
+    public function getTargetRecordsFromPath(string $path): array
+    {
         $data = $this->readJsonFile($path);
         if (!is_array($data)) {
             return [];
@@ -130,6 +135,7 @@ class AdGroupJsonService
                 return [];
             }
 
+            $contents = $this->normalizeJsonContents($contents);
             $decoded = json_decode($contents, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Log::warning('Invalid AD JSON file', [
@@ -147,6 +153,20 @@ class AdGroupJsonService
             ]);
             return [];
         }
+    }
+
+    private function normalizeJsonContents(string $contents): string
+    {
+        $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents) ?? $contents;
+
+        if (function_exists('mb_check_encoding') && !mb_check_encoding($contents, 'UTF-8')) {
+            $converted = @mb_convert_encoding($contents, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
+            if (is_string($converted) && $converted !== '') {
+                $contents = $converted;
+            }
+        }
+
+        return $contents;
     }
 
     private function resolvePath(?string $path): ?string
