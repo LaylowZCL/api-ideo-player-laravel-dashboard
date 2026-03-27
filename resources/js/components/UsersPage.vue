@@ -3,13 +3,13 @@
     <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
-          <h1 class="page-title mb-1">Gestão de Usuários</h1>
-          <p class="page-subtitle mb-0">Controle de acessos, permissões e perfis com rastreabilidade total</p>
+          <h1 class="page-title mb-1">Gestão de Utilizadores</h1>
+          <p class="page-subtitle mb-0">Controlo de acessos, permissões e perfis com rastreabilidade total</p>
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-primary" @click="openCreateUserModal" v-if="canCreateUser">
             <i class="bi bi-plus me-1"></i>
-            Novo Usuário
+            Novo Utilizador
           </button>
         </div>
       </div>
@@ -31,9 +31,10 @@
           <div class="col-md-3">
             <select class="form-select" v-model="roleFilter">
               <option value="">Todos os perfis</option>
+              <option value="super_admin">Super Administradores</option>
               <option value="admin">Administradores</option>
               <option value="manager">Gestores</option>
-              <option value="user">Usuários</option>
+              <option value="user">Utilizadores</option>
             </select>
           </div>
           <div class="col-md-4 d-flex gap-2">
@@ -50,12 +51,12 @@
       </div>
     </div>
 
-    <!-- Modal de Usuário -->
+    <!-- Modal de Utilizador -->
     <div class="modal fade" id="userModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingUser ? 'Editar Usuário' : 'Criar Novo Usuário' }}</h5>
+            <h5 class="modal-title">{{ editingUser ? 'Editar Utilizador' : 'Criar Novo Utilizador' }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" @click="cancelForm"></button>
           </div>
           <div class="modal-body">
@@ -80,7 +81,7 @@
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="user-password" class="form-label">
-                {{ editingUser ? 'Nova Senha (opcional)' : 'Senha *' }}
+                {{ editingUser ? 'Nova palavra-passe (opcional)' : 'Palavra-passe *' }}
               </label>
               <input type="password" class="form-control" id="user-password" 
                      v-model="formData.password" 
@@ -88,7 +89,7 @@
                      placeholder="Mínimo 8 caracteres">
             </div>
             <div class="col-md-6">
-              <label for="user-password-confirm" class="form-label">Confirmar Senha</label>
+              <label for="user-password-confirm" class="form-label">Confirmar palavra-passe</label>
               <input type="password" class="form-control" id="user-password-confirm" 
                      v-model="formData.password_confirmation" 
                      :required="!editingUser || formData.password"
@@ -97,31 +98,43 @@
           </div>
 
           <div class="mb-3" v-if="canChangeRole">
-            <label for="user-type" class="form-label">Tipo de Usuário *</label>
+            <label for="user-type" class="form-label">Perfil *</label>
             <select class="form-select" id="user-type" 
-                    v-model="formData.user_type" 
+                    v-model="formData.role" 
                     :disabled="isCurrentUser"
                     required>
-              <option value="user">Usuário</option>
+              <option value="super_admin" v-if="isSuperAdmin">Super Administrador</option>
+              <option value="user">Utilizador</option>
               <option value="manager">Gestor</option>
-              <option value="admin" v-if="currentUser.user_type === 'admin'">Administrador</option>
+              <option value="admin" v-if="canAssignAdmin">Administrador</option>
             </select>
             <div class="form-text small">
               <span v-if="isCurrentUser">
                 <i class="bi bi-info-circle me-1"></i>
-                Você não pode alterar seu próprio tipo
+                Não pode alterar o seu próprio tipo
               </span>
-              <span v-else-if="currentUser.user_type === 'manager' && editingUser?.user_type === 'admin'">
+              <span v-else-if="currentUser.role === 'manager' && editingUser?.role === 'admin'">
                 <i class="bi bi-shield-lock me-1"></i>
                 Gestores não podem editar administradores
               </span>
             </div>
           </div>
 
+          <div class="mb-3" v-if="canManagePermissions">
+            <label class="form-label">Funções liberadas</label>
+            <div class="permissions-grid">
+              <label class="permission-chip" v-for="permission in availablePermissionOptions" :key="permission.key">
+                <input type="checkbox" :value="permission.key" v-model="formData.permissions" :disabled="isPermissionLocked(permission.key)">
+                <span>{{ permission.label }}</span>
+              </label>
+            </div>
+            <div class="form-text">O perfil escolhido define o limite máximo de módulos disponíveis.</div>
+          </div>
+
           <div class="d-flex justify-content-between align-items-center pt-3 border-top">
             <div class="text-muted small">
               <i class="bi bi-info-circle me-1"></i>
-              Senha deve ter no mínimo 8 caracteres
+              A palavra-passe deve ter pelo menos 8 caracteres
             </div>
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-outline-secondary" @click="cancelForm">
@@ -141,67 +154,74 @@
 
     <!-- Estatísticas Rápidas -->
     <div class="row mb-4 g-3">
-      <div class="col-md-3">
+      <div class="col-lg col-md-6">
         <div class="stat-card stat-total">
-          <div class="stat-label">Total Usuários</div>
+          <div class="stat-label">Total de Utilizadores</div>
           <div class="stat-value">{{ stats.total }}</div>
           <div class="stat-icon"><i class="bi bi-people"></i></div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-lg col-md-6">
+        <div class="stat-card stat-super-admins">
+          <div class="stat-label">Super Admins</div>
+          <div class="stat-value">{{ stats.superAdmins }}</div>
+          <div class="stat-icon"><i class="bi bi-stars"></i></div>
+        </div>
+      </div>
+      <div class="col-lg col-md-6">
         <div class="stat-card stat-admins">
           <div class="stat-label">Administradores</div>
           <div class="stat-value">{{ stats.admins }}</div>
           <div class="stat-icon"><i class="bi bi-shield-lock"></i></div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-lg col-md-6">
         <div class="stat-card stat-managers">
           <div class="stat-label">Gestores</div>
           <div class="stat-value">{{ stats.managers }}</div>
           <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-lg col-md-6">
         <div class="stat-card stat-users">
-          <div class="stat-label">Usuários Comuns</div>
+          <div class="stat-label">Utilizadores Comuns</div>
           <div class="stat-value">{{ stats.users }}</div>
           <div class="stat-icon"><i class="bi bi-person"></i></div>
         </div>
       </div>
     </div>
 
-    <!-- Lista de Usuários -->
+    <!-- Lista de Utilizadores -->
     <div id="users-list">
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Carregando...</span>
+        <span class="visually-hidden">A carregar...</span>
         </div>
-        <p class="mt-3 text-muted">Carregando usuários...</p>
+        <p class="mt-3 text-muted">A carregar utilizadores...</p>
       </div>
 
       <div v-else-if="filteredUsers.length === 0" class="text-center py-5">
         <i class="bi bi-people text-muted fs-1"></i>
-        <h4 class="mt-3 text-muted">Nenhum usuário encontrado</h4>
-        <p class="text-muted" v-if="canCreateUser">Clique em "Novo Usuário" para começar</p>
+        <h4 class="mt-3 text-muted">Nenhum utilizador encontrado</h4>
+        <p class="text-muted" v-if="canCreateUser">Clique em "Novo Utilizador" para começar</p>
       </div>
 
       <div v-else>
         <div class="user-card" v-for="user in filteredUsers" :key="user.id">
           <div class="user-card-main">
-            <div class="user-avatar-lg" :class="getAvatarClass(user.user_type)">
+            <div class="user-avatar-lg" :class="getAvatarClass(user.role)">
               {{ user.name.charAt(0).toUpperCase() }}
             </div>
             <div class="user-meta">
               <div class="user-name">
                 {{ user.name }}
                 <span v-if="user.id === currentUser.id" class="chip chip-self">
-                  <i class="bi bi-person-check me-1"></i>Você
+                  <i class="bi bi-person-check me-1"></i>Actual
                 </span>
               </div>
               <div class="user-email">{{ user.email }}</div>
               <div class="user-tags">
-                <span class="chip" :class="getRoleBadgeClass(user.user_type)">
+                <span class="chip" :class="getRoleBadgeClass(user.role)">
                   {{ user.role_name }}
                 </span>
                 <span class="chip chip-muted">
@@ -282,17 +302,34 @@ export default {
       sortDirection: 'asc',
       currentUser: {
         id: null,
-        user_type: 'user'
+        user_type: 'user',
+        role: 'user',
+        permissions: []
       },
+      permissionOptions: [
+        { key: 'dashboard', label: 'Painel' },
+        { key: 'videos', label: 'Vídeos' },
+        { key: 'schedules', label: 'Agendamentos' },
+        { key: 'reports', label: 'Relatórios' },
+        { key: 'users', label: 'Utilizadores' },
+        { key: 'groups', label: 'Grupos AD' },
+        { key: 'targets', label: 'Alvos AD' },
+        { key: 'clients', label: 'Clientes' },
+        { key: 'campaigns', label: 'Campanhas' },
+        { key: 'logs', label: 'Logs' },
+        { key: 'settings', label: 'Configurações' }
+      ],
       formData: {
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
-        user_type: 'user'
+        role: 'user',
+        permissions: []
       },
       stats: {
         total: 0,
+        superAdmins: 0,
         admins: 0,
         managers: 0,
         users: 0
@@ -313,16 +350,43 @@ export default {
     };
   },
   computed: {
+    isSuperAdmin() {
+      return this.currentUser.role === 'super_admin';
+    },
+
+    canAssignAdmin() {
+      return this.isSuperAdmin || this.currentUser.role === 'admin';
+    },
+
     canCreateUser() {
-      return this.currentUser.user_type === 'admin' || this.currentUser.user_type === 'manager';
+      return ['super_admin', 'admin', 'manager'].includes(this.currentUser.role);
     },
     
     canChangeRole() {
-      return this.currentUser.user_type === 'admin' || this.currentUser.user_type === 'manager';
+      return ['super_admin', 'admin', 'manager'].includes(this.currentUser.role);
+    },
+
+    canManagePermissions() {
+      return ['super_admin', 'admin', 'manager'].includes(this.currentUser.role);
     },
     
     isCurrentUser() {
       return this.editingUser && this.editingUser.id === this.currentUser.id;
+    },
+
+    allowedPermissionKeys() {
+      const role = this.formData.role || 'user';
+      const matrix = {
+        super_admin: this.permissionOptions.map(item => item.key),
+        admin: ['dashboard', 'videos', 'schedules', 'reports', 'users', 'groups', 'targets', 'clients', 'campaigns', 'logs', 'settings'],
+        manager: ['dashboard', 'videos', 'schedules', 'reports', 'clients', 'campaigns'],
+        user: ['dashboard', 'reports']
+      };
+      return matrix[role] || matrix.user;
+    },
+
+    availablePermissionOptions() {
+      return this.permissionOptions.filter(option => this.allowedPermissionKeys.includes(option.key));
     },
 
     filteredUsers() {
@@ -330,7 +394,7 @@ export default {
       let list = [...this.users];
 
       if (this.roleFilter) {
-        list = list.filter(user => user.user_type === this.roleFilter);
+        list = list.filter(user => user.role === this.roleFilter);
       }
 
       if (term) {
@@ -347,12 +411,30 @@ export default {
           return (this.parseDateBr(a.created_at) - this.parseDateBr(b.created_at)) * direction;
         }
         if (this.sortBy === 'user_type') {
-          return a.user_type.localeCompare(b.user_type) * direction;
+          return a.role.localeCompare(b.role) * direction;
         }
         return a.name.localeCompare(b.name) * direction;
       });
 
       return list;
+    }
+  },
+  watch: {
+    'formData.role': {
+      immediate: true,
+      handler() {
+        const allowed = new Set(this.allowedPermissionKeys);
+        this.formData.permissions = this.formData.permissions.filter(permission => allowed.has(permission));
+
+        if (this.formData.role === 'super_admin') {
+          this.formData.permissions = [...this.allowedPermissionKeys];
+          return;
+        }
+
+        if (this.formData.permissions.length === 0) {
+          this.formData.permissions = [...this.allowedPermissionKeys];
+        }
+      }
     }
   },
   mounted() {
@@ -365,15 +447,17 @@ export default {
   methods: {
     async loadCurrentUser() {
       try {
-        // Carrega informações do usuário atual
+        // Carrega informação do utilizador actual
         const response = await axios.get('/api/current-user');
         this.currentUser = {
           id: response.data.id,
-          user_type: response.data.user_type || 'user'
+          user_type: response.data.user_type || 'user',
+          role: response.data.role || response.data.user_type || 'user',
+          permissions: response.data.permissions || []
         };
       } catch (error) {
-        console.error('Erro ao carregar usuário atual:', error);
-        this.showToast('Erro', 'Não foi possível carregar o usuário atual', 'error', 'bi-exclamation-triangle');
+        console.error('Erro ao carregar utilizador actual:', error);
+        this.showToast('Erro', 'Não foi possível carregar o utilizador actual', 'error', 'bi-exclamation-triangle');
       }
     },
     
@@ -384,11 +468,11 @@ export default {
         this.users = response.data;
         this.calculateStats();
       } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
+        console.error('Erro ao carregar utilizadores:', error);
         if (error.response?.status === 403) {
-          this.showToast('Permissão Negada', 'Você não tem permissão para acessar esta área.', 'error', 'bi-shield-slash');
+          this.showToast('Permissão negada', 'Não tem permissão para aceder a esta área.', 'error', 'bi-shield-slash');
         } else {
-          this.showToast('Erro', 'Falha ao carregar usuários', 'error', 'bi-exclamation-triangle');
+          this.showToast('Erro', 'Falha ao carregar utilizadores', 'error', 'bi-exclamation-triangle');
         }
       } finally {
         this.loading = false;
@@ -397,9 +481,10 @@ export default {
     
     calculateStats() {
       this.stats.total = this.users.length;
-      this.stats.admins = this.users.filter(u => u.user_type === 'admin').length;
-      this.stats.managers = this.users.filter(u => u.user_type === 'manager').length;
-      this.stats.users = this.users.filter(u => u.user_type === 'user').length;
+      this.stats.superAdmins = this.users.filter(u => u.role === 'super_admin').length;
+      this.stats.admins = this.users.filter(u => u.role === 'admin').length;
+      this.stats.managers = this.users.filter(u => u.role === 'manager').length;
+      this.stats.users = this.users.filter(u => u.role === 'user').length;
     },
 
     toggleSortDirection() {
@@ -418,18 +503,9 @@ export default {
       // Pode editar a si mesmo (sem trocar tipo)
       if (user.id === this.currentUser.id) return true;
       
-      // Admin pode editar todos
-      if (this.currentUser.user_type === 'admin') return true;
-      
-      // Manager não pode editar admin
-      if (user.user_type === 'admin') return false;
-      
-      // Manager pode editar user
-      if (this.currentUser.user_type === 'manager' && user.user_type === 'user') return true;
-      
-      // Manager não pode editar outro manager
-      if (this.currentUser.user_type === 'manager' && user.user_type === 'manager') return false;
-      
+      if (this.currentUser.role === 'super_admin') return user.role !== 'super_admin';
+      if (this.currentUser.role === 'admin') return ['admin', 'manager', 'user'].includes(user.role);
+      if (this.currentUser.role === 'manager') return user.role === 'user';
       return false;
     },
     
@@ -437,14 +513,9 @@ export default {
       // Não pode excluir a si mesmo
       if (user.id === this.currentUser.id) return false;
       
-      // Admin pode excluir todos
-      if (this.currentUser.user_type === 'admin') return true;
-      
-      // Manager não pode excluir admin nem manager
-      if (this.currentUser.user_type === 'manager') {
-        return user.user_type === 'user'; // Apenas user
-      }
-      
+      if (this.currentUser.role === 'super_admin') return user.role !== 'super_admin';
+      if (this.currentUser.role === 'admin') return ['admin', 'manager', 'user'].includes(user.role);
+      if (this.currentUser.role === 'manager') return user.role === 'user';
       return false;
     },
     
@@ -460,7 +531,8 @@ export default {
         email: '',
         password: '',
         password_confirmation: '',
-        user_type: 'user'
+        role: 'user',
+        permissions: ['dashboard', 'reports']
       };
       this.editingUser = null;
     },
@@ -472,7 +544,7 @@ export default {
     
     editUser(user) {
       if (!this.canEditUser(user)) {
-        this.showToast('Permissão Negada', 'Você não tem permissão para editar este usuário.', 'warning', 'bi-shield-exclamation');
+        this.showToast('Permissão negada', 'Não tem permissão para editar este utilizador.', 'warning', 'bi-shield-exclamation');
         return;
       }
       
@@ -482,7 +554,8 @@ export default {
         email: user.email,
         password: '',
         password_confirmation: '',
-        user_type: user.user_type
+        role: user.role,
+        permissions: [...(user.permissions || [])]
       };
       this.userModal.show();
     },
@@ -501,19 +574,19 @@ export default {
           this.calculateStats();
           this.userModal.hide();
           this.resetForm();
-          this.showToast('Sucesso', 'Usuário criado com sucesso', 'success', 'bi-check-circle');
+          this.showToast('Sucesso', 'Utilizador criado com sucesso', 'success', 'bi-check-circle');
         } else {
           throw new Error(response.data.message);
         }
       } catch (error) {
-        console.error('Erro ao criar usuário:', error);
-        const message = error.response?.data?.message || 'Falha ao criar usuário';
+        console.error('Erro ao criar utilizador:', error);
+        const message = error.response?.data?.message || 'Falha ao criar utilizador';
         const errors = error.response?.data?.errors;
         
         if (errors) {
           // Mostra o primeiro erro de validação
           const firstError = Object.values(errors)[0][0];
-          this.showToast('Erro de Validação', firstError, 'error', 'bi-exclamation-triangle');
+          this.showToast('Erro de validação', firstError, 'error', 'bi-exclamation-triangle');
         } else {
           this.showToast('Erro', message, 'error', 'bi-exclamation-triangle');
         }
@@ -539,19 +612,19 @@ export default {
           this.calculateStats();
           this.userModal.hide();
           this.resetForm();
-          this.showToast('Sucesso', 'Usuário atualizado com sucesso', 'success', 'bi-check-circle');
+          this.showToast('Sucesso', 'Utilizador actualizado com sucesso', 'success', 'bi-check-circle');
         } else {
           throw new Error(response.data.message);
         }
       } catch (error) {
-        console.error('Erro ao atualizar usuário:', error);
-        const message = error.response?.data?.message || 'Falha ao atualizar usuário';
+        console.error('Erro ao actualizar utilizador:', error);
+        const message = error.response?.data?.message || 'Falha ao actualizar utilizador';
         const errors = error.response?.data?.errors;
         
         if (errors) {
           // Mostra o primeiro erro de validação
           const firstError = Object.values(errors)[0][0];
-          this.showToast('Erro de Validação', firstError, 'error', 'bi-exclamation-triangle');
+          this.showToast('Erro de validação', firstError, 'error', 'bi-exclamation-triangle');
         } else {
           this.showToast('Erro', message, 'error', 'bi-exclamation-triangle');
         }
@@ -562,12 +635,12 @@ export default {
     
     deleteUser(user) {
       if (!this.canDeleteUser(user)) {
-        this.showToast('Permissão Negada', 'Você não tem permissão para excluir este usuário.', 'warning', 'bi-shield-exclamation');
+        this.showToast('Permissão negada', 'Não tem permissão para eliminar este utilizador.', 'warning', 'bi-shield-exclamation');
         return;
       }
       
       this.showConfirmModal(
-        `Tem certeza que deseja excluir o usuário "${user.name}" (${user.email})?`,
+        `Tem a certeza de que pretende eliminar o utilizador "${user.name}" (${user.email})?`,
         async () => {
           this.loading = true;
           try {
@@ -576,11 +649,11 @@ export default {
             if (response.data.success) {
               this.users = this.users.filter(u => u.id !== user.id);
               this.calculateStats();
-              this.showToast('Usuário Removido', 'O usuário foi excluído com sucesso', 'success', 'bi-check-circle');
+              this.showToast('Utilizador removido', 'O utilizador foi eliminado com sucesso', 'success', 'bi-check-circle');
             }
           } catch (error) {
-            console.error('Erro ao excluir usuário:', error);
-            const message = error.response?.data?.message || 'Falha ao excluir usuário';
+            console.error('Erro ao eliminar utilizador:', error);
+            const message = error.response?.data?.message || 'Falha ao eliminar utilizador';
             this.showToast('Erro', message, 'error', 'bi-exclamation-triangle');
           } finally {
             this.loading = false;
@@ -594,46 +667,55 @@ export default {
       this.toast.hide();
       
       if (!this.formData.name.trim()) {
-        this.showToast('Atenção', 'Informe o nome do usuário', 'warning', 'bi-exclamation-triangle');
+        this.showToast('Atenção', 'Indique o nome do utilizador', 'warning', 'bi-exclamation-triangle');
         return false;
       }
       
       if (!this.formData.email.trim()) {
-        this.showToast('Atenção', 'Informe o email do usuário', 'warning', 'bi-exclamation-triangle');
+        this.showToast('Atenção', 'Indique o email do utilizador', 'warning', 'bi-exclamation-triangle');
         return false;
       }
       
       // Valida email básico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.formData.email)) {
-        this.showToast('Atenção', 'Informe um email válido', 'warning', 'bi-exclamation-triangle');
+        this.showToast('Atenção', 'Indique um email válido', 'warning', 'bi-exclamation-triangle');
         return false;
       }
       
-      // Para criação, senha é obrigatória
+      // Na criação, a palavra-passe é obrigatória
       if (!isUpdate && !this.formData.password) {
-        this.showToast('Atenção', 'Informe uma senha', 'warning', 'bi-exclamation-triangle');
+        this.showToast('Atenção', 'Indique uma palavra-passe', 'warning', 'bi-exclamation-triangle');
         return false;
       }
       
-      // Se informou senha (em criação ou atualização)
+      // Se foi indicada palavra-passe (em criação ou actualização)
       if (this.formData.password) {
         if (this.formData.password.length < 8) {
-          this.showToast('Atenção', 'A senha deve ter no mínimo 8 caracteres', 'warning', 'bi-exclamation-triangle');
+          this.showToast('Atenção', 'A palavra-passe deve ter pelo menos 8 caracteres', 'warning', 'bi-exclamation-triangle');
           return false;
         }
         
         if (this.formData.password !== this.formData.password_confirmation) {
-          this.showToast('Atenção', 'As senhas não coincidem', 'warning', 'bi-exclamation-triangle');
+          this.showToast('Atenção', 'As palavras-passe não coincidem', 'warning', 'bi-exclamation-triangle');
           return false;
         }
       }
+
+      this.formData.permissions = this.formData.permissions.filter(permission =>
+        this.allowedPermissionKeys.includes(permission)
+      );
       
       return true;
     },
     
+    isPermissionLocked(permissionKey) {
+      return !this.allowedPermissionKeys.includes(permissionKey) || this.formData.role === 'super_admin';
+    },
+
     getRoleBadgeClass(userType) {
       const classes = {
+        'super_admin': 'chip-super-admin',
         'admin': 'chip-admin',
         'manager': 'chip-manager',
         'user': 'chip-user'
@@ -643,6 +725,7 @@ export default {
     
     getAvatarClass(userType) {
       const classes = {
+        'super_admin': 'avatar-super-admin',
         'admin': 'avatar-admin',
         'manager': 'avatar-manager',
         'user': 'avatar-user'
@@ -875,6 +958,11 @@ export default {
   background: rgba(35, 100, 200, 0.5);
 }
 
+.avatar-super-admin {
+  background: linear-gradient(135deg, rgba(186, 154, 106, 0.95), rgba(255, 231, 188, 0.65));
+  color: #082348;
+}
+
 .avatar-manager {
   background: rgba(35, 150, 170, 0.5);
 }
@@ -895,6 +983,43 @@ export default {
 
 .btn-outline-light:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.stat-super-admins {
+  background: linear-gradient(135deg, rgba(186, 154, 106, 0.95), rgba(110, 80, 24, 0.92));
+}
+
+.chip-super-admin {
+  background: rgba(186, 154, 106, 0.24);
+  color: #ffecc7;
+  border: 1px solid rgba(255, 225, 170, 0.25);
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.permission-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f5f7ff;
+  cursor: pointer;
+}
+
+.permission-chip input {
+  accent-color: #ba9a69;
+}
+
+.permission-chip:has(input:disabled) {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 </style>
 <style scoped>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Logs - ZK Interactive')
+@section('title', 'Registos - ZK Interactive')
 
 @section('content')
     <div id="logs-section" class="content-section">

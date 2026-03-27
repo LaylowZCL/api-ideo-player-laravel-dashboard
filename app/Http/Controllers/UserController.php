@@ -48,7 +48,8 @@ class UserController extends Controller
         
         // Se for manager, não mostra admins
         if (Gate::allows('isManager') && !Gate::allows('isAdmin')) {
-            $query->where('user_type', '!=', 'admin');
+            $query->whereNotIn('role', ['admin', 'super_admin'])
+                ->whereNotIn('user_type', ['admin', 'super_admin']);
         }
         
         $users = $query->orderBy('name')->get()->map(function($user) {
@@ -57,7 +58,9 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'user_type' => $user->user_type,
-                'role_name' => $this->getRoleName($user->user_type),
+                'role' => $user->roleName(),
+                'role_name' => $this->getRoleName($user->roleName()),
+                'permissions' => $user->permissionList(),
                 'created_at' => $user->created_at->format('d/m/Y')
             ];
         });
@@ -82,16 +85,17 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'user_type' => [
+            'role' => [
                 'required',
-                Rule::in(['user', 'manager', 'admin']),
+                Rule::in(['user', 'manager', 'admin', 'super_admin']),
                 function ($attribute, $value, $fail) {
-                    // Manager não pode criar admin
-                    if (Gate::allows('isManager') && !Gate::allows('isAdmin') && $value === 'admin') {
-                        $fail('Você não tem permissão para criar administradores.');
+                    if (!$this->canAssignRole(auth()->user(), $value)) {
+                        $fail('Você não tem permissão para atribuir este perfil.');
                     }
                 },
             ],
+            'permissions' => 'nullable|array',
+            'permissions.*' => ['string', Rule::in(User::MODULE_PERMISSIONS)],
         ]);
 
         if ($validator->fails()) {
@@ -107,13 +111,16 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'user_type' => $request->user_type
+                'role' => $request->role,
+                'permissions' => $this->normalizePermissions($request->input('permissions', []), $request->role),
             ]);
+            $user->syncLegacyRoleFields();
+            $user->save();
 
             app(AuditLogService::class)->log('user.create', 'success', [
                 'user_id' => $user->id,
                 'email' => $user->email,
-                'user_type' => $user->user_type,
+                'role' => $user->roleName(),
             ]);
 
             return response()->json([
@@ -124,7 +131,9 @@ class UserController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'user_type' => $user->user_type,
-                    'role_name' => $this->getRoleName($user->user_type),
+                    'role' => $user->roleName(),
+                    'role_name' => $this->getRoleName($user->roleName()),
+                    'permissions' => $user->permissionList(),
                     'created_at' => $user->created_at->format('d/m/Y')
                 ]
             ]);
@@ -159,7 +168,7 @@ class UserController extends Controller
         }
 
         // Manager não pode editar admin
-        if (!$isSelf && $user->user_type === 'admin' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
+        if (!$isSelf && in_array($user->roleName(), ['admin', 'super_admin'], true) && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Você não tem permissão para editar administradores.'
@@ -176,38 +185,22 @@ class UserController extends Controller
                 Rule::unique('users')->ignore($user->id)
             ],
             'password' => 'sometimes|string|min:8|confirmed',
-            'user_type' => [
+            'role' => [
                 'sometimes',
-                Rule::in(['user', 'manager', 'admin']),
+                Rule::in(['user', 'manager', 'admin', 'super_admin']),
                 function ($attribute, $value, $fail) use ($user, $currentUser, $isSelf) {
                     if ($isSelf) {
                         $fail('Você não pode alterar seu próprio tipo de usuário.');
                         return;
                     }
 
-                    // Manager não pode promover para admin
-                    if (Gate::allows('isManager') && !Gate::allows('isAdmin') && $value === 'admin') {
-                        $fail('Você não tem permissão para promover para administrador.');
-                    }
-                    
-                    // Manager não pode alterar admin para outro tipo
-                    if ($user->user_type === 'admin' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
-                        $fail('Você não tem permissão para alterar administradores.');
-                    }
-                    
-                    // Manager pode promover user para manager
-                    if (Gate::allows('isManager') && !Gate::allows('isAdmin') && 
-                        $user->user_type === 'user' && $value === 'manager') {
-                        // Permitido
-                    }
-                    
-                    // Manager não pode rebaixar manager para user
-                    if (Gate::allows('isManager') && !Gate::allows('isAdmin') && 
-                        $user->user_type === 'manager' && $value === 'user') {
-                        $fail('Você não tem permissão para rebaixar gestores.');
+                    if (!$this->canAssignRole($currentUser, $value) || !$this->canManageTargetUser($currentUser, $user)) {
+                        $fail('Você não tem permissão para alterar este perfil.');
                     }
                 },
             ],
+            'permissions' => 'nullable|array',
+            'permissions.*' => ['string', Rule::in(User::MODULE_PERMISSIONS)],
         ]);
 
         if ($validator->fails()) {
@@ -232,8 +225,7 @@ class UserController extends Controller
                 $user->password = Hash::make($request->password);
             }
             
-            // Atualiza user_type se especificado e permitido
-            if ($request->has('user_type')) {
+            if ($request->has('role')) {
                 if ($isSelf) {
                     return response()->json([
                         'success' => false,
@@ -241,18 +233,19 @@ class UserController extends Controller
                     ], 403);
                 }
 
-                // Apenas admin pode mudar para/desde admin
-                if ($request->user_type === 'admin' || $user->user_type === 'admin') {
-                    if (!Gate::allows('isAdmin')) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Apenas administradores podem gerenciar outros administradores.'
-                        ], 403);
-                    }
-                }
-                
-                $user->user_type = $request->user_type;
+                $user->role = $request->role;
             }
+
+            if ($request->has('permissions')) {
+                $user->permissions = $this->normalizePermissions(
+                    $request->input('permissions', []),
+                    $request->input('role', $user->roleName())
+                );
+            } elseif ($request->has('role')) {
+                $user->permissions = $this->normalizePermissions($user->permissionList(), $request->role);
+            }
+
+            $user->syncLegacyRoleFields();
             
             $user->save();
 
@@ -269,7 +262,9 @@ class UserController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'user_type' => $user->user_type,
-                    'role_name' => $this->getRoleName($user->user_type),
+                    'role' => $user->roleName(),
+                    'role_name' => $this->getRoleName($user->roleName()),
+                    'permissions' => $user->permissionList(),
                     'created_at' => $user->created_at->format('d/m/Y')
                 ]
             ]);
@@ -311,18 +306,10 @@ class UserController extends Controller
         }
 
         // Manager não pode excluir admin
-        if ($user->user_type === 'admin' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
+        if (!$this->canManageTargetUser($currentUser, $user)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Você não tem permissão para excluir administradores.'
-            ], 403);
-        }
-
-        // Manager não pode excluir outro manager
-        if ($user->user_type === 'manager' && Gate::allows('isManager') && !Gate::allows('isAdmin')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Você não tem permissão para excluir outros gestores.'
+                'message' => 'Você não tem permissão para excluir este utilizador.'
             ], 403);
         }
 
@@ -357,11 +344,59 @@ class UserController extends Controller
     private function getRoleName($userType)
     {
         $roles = [
+            'super_admin' => 'Super Administrador',
             'admin' => 'Administrador',
             'manager' => 'Gestor',
             'user' => 'Usuário'
         ];
         
         return $roles[$userType] ?? 'Usuário';
+    }
+
+    private function canAssignRole(User $actor, string $role): bool
+    {
+        $actorRole = $actor->roleName();
+
+        return match ($actorRole) {
+            'super_admin' => in_array($role, ['super_admin', 'admin', 'manager', 'user'], true),
+            'admin' => in_array($role, ['admin', 'manager', 'user'], true),
+            'manager' => in_array($role, ['manager', 'user'], true),
+            default => false,
+        };
+    }
+
+    private function canManageTargetUser(User $actor, User $target): bool
+    {
+        $actorRole = $actor->roleName();
+        $targetRole = $target->roleName();
+
+        if ($actorRole === 'super_admin') {
+            return $targetRole !== 'super_admin';
+        }
+
+        if ($actorRole === 'admin') {
+            return in_array($targetRole, ['admin', 'manager', 'user'], true);
+        }
+
+        if ($actorRole === 'manager') {
+            return $targetRole === 'user';
+        }
+
+        return false;
+    }
+
+    private function normalizePermissions(array $permissions, string $role): array
+    {
+        if ($role === 'super_admin') {
+            return User::MODULE_PERMISSIONS;
+        }
+
+        $allowed = User::defaultPermissionsForRole($role);
+
+        if (empty($permissions)) {
+            return $allowed;
+        }
+
+        return array_values(array_unique(array_intersect(User::MODULE_PERMISSIONS, $permissions, $allowed)));
     }
 }

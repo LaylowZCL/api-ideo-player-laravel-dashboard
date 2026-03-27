@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'VideoScheduler')</title>
+    <title>@yield('title', 'Gestor de Vídeos')</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo-bm.png') }}">
-    <meta name="description" content="Dashboard de controle para aplicação de vídeos agendados">
+    <meta name="description" content="Painel de controlo para a aplicação de vídeos agendados">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,7 @@
                         <img src="{{ asset('assets/images/logo-bm.png') }}" style="width:100%">
                     </div>
                     <div>
-                        <h6 class="mb-0 text-primary">Video Scheduler</h6>
+                        <h6 class="mb-0 text-primary">Gestor de Vídeos</h6>
                         <small class="text-muted">by: Ideias</small>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                 <div class="nav-menu">
                     <a href="{{ route('dashboard') }}" class="nav-btn {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <i class="bi bi-display"></i>
-                        <span>Dashboard</span>
+                        <span>Painel</span>
                     </a>
                     <a href="{{ route('schedule') }}" class="nav-btn {{ request()->routeIs('schedule.index') ? 'active' : '' }}">
                         <i class="bi bi-calendar3"></i>
@@ -81,7 +81,7 @@
                     --}}
                     <a href="{{ route('users') }}" class="nav-btn {{ request()->routeIs('users') ? 'active' : '' }}">
                         <i class="bi bi-activity"></i>
-                        <span>Usuários</span>
+                        <span>Utilizadores</span>
                     </a>
                     @can('isAdmin')
                     <div class="mt-3 text-uppercase text-muted small" style="letter-spacing:0.08em;">
@@ -122,7 +122,7 @@
                     <div class="bg-success rounded-circle" style="width: 8px; height: 8px;"></div>
                     <div>
                         <div class="small fw-medium">Sistema Ativo</div>
-                        <div class="text-muted" style="font-size: 0.75rem;">Online • 2h 34m</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Em linha • 2h 34m</div>
                     </div>
                 </div>
             </div>

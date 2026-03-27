@@ -4,7 +4,7 @@
       <div class="d-flex justify-content-between align-items-center">
         <div>
           <h1 class="h2 mb-1">Agendamentos</h1>
-          <p class="text-muted mb-0">Gerencie os horários de execução dos vídeos</p>
+          <p class="text-muted mb-0">Gira os horários de execução dos vídeos</p>
         </div>
         <button class="btn btn-primary" @click="openCreateScheduleModal">
           <i class="bi bi-plus me-1"></i>
@@ -18,7 +18,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingSchedule ? 'Editar Agendamento' : 'Criar Novo Agendamento' }}</h5>
+            <h5 class="modal-title">{{ editingSchedule ? 'Editar agendamento' : 'Criar novo agendamento' }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" @click="cancelForm"></button>
           </div>
           <div class="modal-body">
@@ -40,7 +40,7 @@
                 <option v-for="video in videos" :key="video.id" :value="video.name">
                   {{ video.title }} ({{ video.duration }})
                   <span v-if="video.cached" class="text-success">
-                    <i class="bi bi-check-circle ms-1"></i> Cache
+                    <i class="bi bi-check-circle ms-1"></i> Em cache
                   </span>
                 </option>
               </select>
@@ -86,7 +86,7 @@
               <input type="number" class="form-control" id="schedule-priority"
                      v-model.number="formData.priority"
                      min="0" max="100" step="1">
-              <div class="form-text">Maior prioridade vence em caso de conflito.</div>
+              <div class="form-text">A prioridade mais elevada prevalece em caso de conflito.</div>
             </div>
           </div>
 
@@ -110,7 +110,7 @@
                 </select>
               </div>
             </div>
-            <div class="form-text">Se não selecionar grupos nem clientes, o agendamento é global.</div>
+            <div class="form-text">Se não seleccionar grupos nem clientes, o agendamento é global.</div>
           </div>
 
           <div class="mb-3">
@@ -161,7 +161,7 @@
         <div class="card bg-info bg-opacity-10 border-info">
           <div class="card-body text-center py-3">
             <h3 class="mb-1">{{ stats.total }}</h3>
-            <p class="small text-muted mb-0">Total Agendamentos</p>
+            <p class="small text-muted mb-0">Total de agendamentos</p>
           </div>
         </div>
       </div>
@@ -195,9 +195,9 @@
     <div id="schedules-list">
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Carregando...</span>
+          <span class="visually-hidden">A carregar...</span>
         </div>
-        <p class="mt-3 text-muted">Carregando agendamentos...</p>
+          <p class="mt-3 text-muted">A carregar agendamentos...</p>
       </div>
 
       <div v-else-if="schedules.length === 0" class="text-center py-5">

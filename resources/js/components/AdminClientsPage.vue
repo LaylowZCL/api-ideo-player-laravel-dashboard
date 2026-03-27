@@ -3,7 +3,7 @@
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
         <h1 class="page-title mb-1">Clientes</h1>
-        <p class="page-subtitle mb-0">Controle de dispositivos, grupos e chaves por ponto</p>
+        <p class="page-subtitle mb-0">Controlo de dispositivos, grupos e chaves por posto</p>
       </div>
     </div>
 
@@ -15,7 +15,7 @@
               <span class="input-group-text bg-transparent border-0 text-muted">
                 <i class="bi bi-search"></i>
               </span>
-              <input type="text" class="form-control" placeholder="Pesquisar por client_id ou hostname" v-model="searchTerm">
+              <input type="text" class="form-control" placeholder="Pesquisar por ID do cliente ou nome da máquina" v-model="searchTerm">
             </div>
           </div>
           <div class="col-md-3">
@@ -35,7 +35,7 @@
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-3">Carregando clientes...</p>
+      <p class="text-muted mt-3">A carregar clientes...</p>
     </div>
 
     <div v-else>
@@ -70,14 +70,14 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Editar Cliente</h5>
+            <h5 class="modal-title">Editar cliente</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveClient">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">Client ID</label>
+                  <label class="form-label">ID do cliente</label>
                   <input type="text" class="form-control" v-model="formData.client_id" disabled>
                 </div>
                 <div class="col-md-6">
@@ -85,7 +85,7 @@
                   <input type="text" class="form-control" v-model="formData.hostname">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">API Key</label>
+                  <label class="form-label">Chave da API</label>
                   <input type="text" class="form-control" v-model="formData.api_key" placeholder="Opcional">
                 </div>
                 <div class="col-md-6">

@@ -48,5 +48,9 @@ class AuthServiceProvider extends ServiceProvider
         $gate->define('isManagerOnly', function ($user) {
             return $user->roleName() === 'manager';
         });
+
+        $gate->define('access-module', function ($user, string $module) {
+            return $user->hasPermission($module);
+        });
     }
 }

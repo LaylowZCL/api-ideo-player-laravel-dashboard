@@ -38,7 +38,7 @@
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-3">Carregando grupos...</p>
+      <p class="text-muted mt-3">A carregar grupos...</p>
     </div>
 
     <div v-else class="table-responsive">
@@ -47,6 +47,7 @@
           <tr>
             <th>Nome</th>
             <th>DN</th>
+            <th>Email</th>
             <th>Fonte</th>
             <th>Status</th>
             <th class="text-end">Ações</th>
@@ -56,6 +57,7 @@
           <tr v-for="group in filteredGroups" :key="group.id">
             <td class="fw-semibold">{{ group.name }}</td>
             <td class="text-muted">{{ group.dn || '-' }}</td>
+            <td class="text-white">{{ group.email || '-' }}</td>
             <td>
               <span class="chip" :class="group.source === 'ad' ? 'chip-admin' : 'chip-user'">
                 {{ group.source || 'manual' }}
@@ -76,7 +78,7 @@
             </td>
           </tr>
           <tr v-if="filteredGroups.length === 0">
-            <td colspan="5" class="text-center text-muted py-4">Nenhum grupo encontrado.</td>
+            <td colspan="6" class="text-center text-muted py-4">Nenhum grupo encontrado.</td>
           </tr>
         </tbody>
       </table>
@@ -104,6 +106,10 @@
                 <div class="col-md-6">
                   <label class="form-label">SID</label>
                   <input type="text" class="form-control" v-model="formData.sid">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email do grupo</label>
+                  <input type="email" class="form-control" v-model="formData.email" placeholder="grupo@dominio.com">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Fonte</label>
@@ -153,6 +159,7 @@ export default {
         name: '',
         dn: '',
         sid: '',
+        email: '',
         source: 'manual',
         active: true
       }
@@ -184,7 +191,7 @@ export default {
     },
     openModal() {
       this.editingGroup = null;
-      this.formData = { name: '', dn: '', sid: '', source: 'manual', active: true };
+      this.formData = { name: '', dn: '', sid: '', email: '', source: 'manual', active: true };
       this.modal.show();
     },
     editGroup(group) {
@@ -193,6 +200,7 @@ export default {
         name: group.name,
         dn: group.dn || '',
         sid: group.sid || '',
+        email: group.email || '',
         source: group.source || 'manual',
         active: !!group.active
       };

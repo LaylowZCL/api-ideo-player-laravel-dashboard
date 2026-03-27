@@ -38,7 +38,7 @@
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-3">Carregando campanhas...</p>
+      <p class="text-muted mt-3">A carregar campanhas...</p>
     </div>
 
     <div v-else>

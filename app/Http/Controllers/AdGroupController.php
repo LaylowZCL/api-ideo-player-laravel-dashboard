@@ -24,6 +24,7 @@ class AdGroupController extends Controller
             'name' => 'required|string|max:255',
             'dn' => 'nullable|string|max:500',
             'sid' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
             'source' => 'nullable|string|in:manual,ad,client',
             'active' => 'nullable|boolean',
         ]);
@@ -60,6 +61,7 @@ class AdGroupController extends Controller
             'name' => 'sometimes|string|max:255',
             'dn' => 'nullable|string|max:500',
             'sid' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
             'source' => 'nullable|string|in:manual,ad,client',
             'active' => 'nullable|boolean',
         ]);

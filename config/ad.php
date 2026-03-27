@@ -6,16 +6,19 @@ if ($bmAuthRaw !== null) {
     $bmAuth = filter_var($bmAuthRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 }
 
-$adEnabled = $bmAuth === null
-    ? env('AD_ENABLED', false)
+$adEnabled = env('AD_ENABLED', false);
+
+$dashboardUsesAd = $bmAuth === null
+    ? $adEnabled
     : !$bmAuth;
 
-$allowLocalFallback = $bmAuth === null
+$allowLocalFallback = $dashboardUsesAd
     ? env('AD_ALLOW_LOCAL_FALLBACK', true)
-    : false;
+    : true;
 
 return [
     'enabled' => $adEnabled,
+    'dashboard_uses_ad' => $dashboardUsesAd,
     'allow_local_fallback' => $allowLocalFallback,
     'host' => env('AD_HOST', ''),
     'port' => env('AD_PORT', 389),

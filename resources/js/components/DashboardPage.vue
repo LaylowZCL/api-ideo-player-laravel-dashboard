@@ -3,19 +3,19 @@
         <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1 class="h2 mb-1">Dashboard</h1>
+                    <h1 class="h2 mb-1">Painel de controlo</h1>
                     <p class="text-muted mb-0">
-                        Última atualização: {{ lastUpdate || 'Carregando...' }}
+                        Última actualização: {{ lastUpdate || 'A carregar...' }}
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-3">
                     <div class="d-flex align-items-center gap-2 px-3 py-1 bg-success bg-opacity-10 text-success rounded-pill">
                         <i class="bi bi-wifi"></i>
-                        <span class="small fw-medium">Online</span>
+                        <span class="small fw-medium">Em linha</span>
                     </div>
                     <button class="btn btn-outline-secondary btn-sm" @click="fetchDashboardData" :disabled="isLoading">
                         <i class="bi" :class="isLoading ? 'bi-arrow-clockwise spin' : 'bi-arrow-clockwise'"></i>
-                        {{ isLoading ? 'Atualizando...' : 'Atualizar' }}
+                        {{ isLoading ? 'A actualizar...' : 'Actualizar' }}
                     </button>
                 </div>
             </div>
@@ -24,9 +24,9 @@
         <!-- Loading State -->
         <div v-if="isLoading && !hasData" class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
+                <span class="visually-hidden">A carregar...</span>
             </div>
-            <p class="mt-3 text-muted">Carregando dados do dashboard...</p>
+            <p class="mt-3 text-muted">A carregar dados do painel...</p>
         </div>
 
         <!-- Error State -->

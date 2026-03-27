@@ -2,17 +2,17 @@
   <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
       <div>
-        <h1 class="h2 mb-1">Preview de Vídeos</h1>
+        <h1 class="h2 mb-1">Pré-visualização de Vídeos</h1>
         <p class="text-muted mb-0">Visualize e teste os vídeos antes da execução</p>
       </div>
       <div class="d-flex align-items-center gap-3">
         <button class="btn btn-outline-secondary" @click="testPopup">
           <i class="bi bi-window me-1"></i>
-          Testar Popup
+          Testar popup
         </button>
         <button class="btn btn-primary" @click="previewOnMonitor">
           <i class="bi bi-display me-1"></i>
-          Preview no Monitor
+          Pré-visualizar no monitor
         </button>
       </div>
     </div>
@@ -126,11 +126,11 @@
         <!-- Monitor Config -->
         <div class="card mt-4">
           <div class="card-header">
-            <h5 class="card-title mb-0">Configuração de Monitor</h5>
+            <h5 class="card-title mb-0">Configuração do monitor</h5>
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label for="monitor-select" class="form-label">Monitor de Destino</label>
+              <label for="monitor-select" class="form-label">Monitor de destino</label>
               <select class="form-select" id="monitor-select" v-model="monitor">
                 <option value="primary">Monitor Principal</option>
                 <option value="secondary">Monitor Secundário</option>
@@ -148,11 +148,11 @@
               </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <label class="form-label mb-0">Sempre no Topo</label>
+              <label class="form-label mb-0">Sempre por cima</label>
               <input class="form-check-input" type="checkbox" v-model="alwaysOnTop" />
             </div>
             <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label mb-0">Auto-fechar</label>
+              <label class="form-label mb-0">Fechar automaticamente</label>
               <input class="form-check-input" type="checkbox" v-model="autoClose" />
             </div>
           </div>

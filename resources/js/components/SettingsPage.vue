@@ -364,7 +364,7 @@ export default {
         const response = await axios.post('/api/system-settings', this.settings);
         
         if (response.data.success) {
-          this.showToast('Configurações Salvas', 'As configurações foram aplicadas com sucesso', 'success');
+          this.showToast('Configurações guardadas', 'As configurações foram aplicadas com sucesso', 'success');
           // Atualiza as configurações locais com a resposta do servidor
           this.settings = response.data.settings;
         } else {
@@ -386,7 +386,7 @@ export default {
     },
     async resetSettings() {
       this.showConfirmModal(
-        'Tem certeza que deseja restaurar as configurações padrão? Todas as configurações personalizadas serão perdidas.',
+        'Tem a certeza de que pretende repor as configurações predefinidas? Todas as configurações personalizadas serão perdidas.',
         async () => {
           this.isLoading = true;
           try {
@@ -394,7 +394,7 @@ export default {
             
             if (response.data.success) {
               this.settings = response.data.settings;
-              this.showToast('Configurações Restauradas', 'As configurações padrão foram restauradas', 'success');
+              this.showToast('Configurações repostas', 'As configurações predefinidas foram repostas', 'success');
             } else {
               this.showToast('Erro', response.data.message || 'Falha ao restaurar configurações', 'error');
             }
@@ -409,7 +409,7 @@ export default {
     },
     async testConnection() {
       if (!this.settings.apiEndpoint) {
-        this.showToast('Erro', 'Informe o endpoint da API primeiro', 'error');
+        this.showToast('Erro', 'Indique primeiro o endpoint da API', 'error');
         return;
       }
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - ZK Interactive')
+@section('title', 'Painel de controlo - ZK Interactive')
 
 @section('content')
     <div>
@@ -13,4 +13,3 @@
 @section('scripts')
     @vite(['resources/js/app.js'])
 @endsection
-

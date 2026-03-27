@@ -32,7 +32,7 @@ Route::view('/documentacao/manual-dashboard-web', 'documentacao.manuais.manual-d
 Route::view('/documentacao/manual-app-electron', 'documentacao.manuais.manual-app-electron')->name('documentacao.manual-app-electron');
 Route::view('/documentacao/ficha-tecnica', 'documentacao.manuais.ficha-tecnica')->name('documentacao.ficha-tecnica');
 
-if (config('ad.enabled')) {
+if (config('ad.dashboard_uses_ad')) {
     Auth::routes([
         'register' => false,
         'reset' => false,
@@ -78,6 +78,8 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
             'name' => $user->name,
             'email' => $user->email,
             'user_type' => $user->user_type ?? 'user',
+            'role' => $user->roleName(),
+            'permissions' => $user->permissionList(),
         ]);
     });
 
@@ -101,6 +103,8 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
 
     // ==== REPORTS ====
     Route::get('/reports', [VideoReportController::class, 'index']);
+    Route::get('/reports/export', [VideoReportController::class, 'exportExcel']);
+    Route::post('/reports/export-email', [VideoReportController::class, 'emailExcel']);
 
     // ==== SCHEDULES ====
     Route::prefix('schedules')->group(function () {

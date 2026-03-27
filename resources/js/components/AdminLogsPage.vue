@@ -23,22 +23,22 @@
               <span class="input-group-text bg-transparent border-0 text-muted">
                 <i class="bi bi-search"></i>
               </span>
-              <input type="text" class="form-control" placeholder="Buscar por evento ou ator" v-model="filters.search" @input="fetchLogs">
+              <input type="text" class="form-control" placeholder="Pesquisar por evento ou actor" v-model="filters.search" @input="fetchLogs">
             </div>
           </div>
           <div class="col-md-2">
             <select class="form-select" v-model="filters.level" @change="fetchLogs">
               <option value="">Nível</option>
-              <option value="info">Info</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
+              <option value="info">Informação</option>
+              <option value="warning">Aviso</option>
+              <option value="error">Erro</option>
             </select>
           </div>
           <div class="col-md-2">
             <select class="form-select" v-model="filters.status" @change="fetchLogs">
               <option value="">Status</option>
               <option value="success">Sucesso</option>
-              <option value="failed">Falha</option>
+              <option value="failed">Falhou</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -47,7 +47,7 @@
             </button>
           </div>
           <div class="col-md-2 text-end">
-            <span class="chip chip-muted">{{ total }} registros</span>
+            <span class="chip chip-muted">{{ total }} registos</span>
           </div>
         </div>
       </div>
@@ -55,7 +55,7 @@
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-3">Carregando logs...</p>
+      <p class="text-muted mt-3">A carregar registos...</p>
     </div>
 
     <div v-else class="table-responsive">
@@ -196,7 +196,7 @@ export default {
       window.location.href = '/api/logs/export';
     },
     async clearLogs() {
-      if (!confirm('Deseja realmente limpar todos os logs?')) return;
+      if (!confirm('Pretende mesmo limpar todos os registos?')) return;
       await axios.delete('/api/logs');
       this.fetchLogs();
     }

@@ -10,6 +10,7 @@ class AdGroup extends Model
         'name',
         'dn',
         'sid',
+        'email',
         'source',
         'active',
     ];

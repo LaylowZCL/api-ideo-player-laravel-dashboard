@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'VideoScheduler')</title>
-    <meta name="description" content="Dashboard de controle para aplicação de vídeos agendados">
+    <meta name="description" content="Painel de controlo para a aplicação de vídeos agendados">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,23 +59,19 @@
 
 
 <!doctype html>
-<html lang="en">
+<html lang="pt-PT">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-    <meta name="generator" content="Hugo 0.84.0">
-    <title>@yield('title', 'VideoScheduler')</title>
-
-    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sign-in/">
+    <meta name="description" content="Autenticação do painel de gestão de vídeos">
+    <title>@yield('title', 'Gestor de Vídeos')</title>
 
             <!-- Bootstrap core CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
             <!-- Favicon -->
         <link rel="icon" type="image/png" href="{{ asset('assets/images/logo-bm.png') }}">
-        <meta name="theme-color" content="#7952b3">
+        <meta name="theme-color" content="#023d7c">
 
         <style>
             html,
@@ -198,8 +194,6 @@
             }
         </style>
 
-        <!-- Custom styles for this template -->
-        <link href="signin.css" rel="stylesheet">
             @vite(['resources/js/app.js'])
 
             @stack('styles')

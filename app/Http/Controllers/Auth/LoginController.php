@@ -85,10 +85,14 @@ class LoginController extends Controller
 
     protected function attemptLogin(Request $request)
     {
-        if (!config('ad.enabled')) {
-            return $this->guard()->attempt(
-                $this->credentials($request), $request->filled('remember')
-            );
+        if (!config('ad.dashboard_uses_ad')) {
+            $result = $this->attemptLocalLogin($request);
+            app(AuditLogService::class)->log('auth.login', $result ? 'success' : 'failed', [
+                'auth_source' => 'local',
+                'login' => $request->input($this->username()),
+            ], $result ? 'info' : 'warning');
+
+            return $result;
         }
 
         $login = $request->input($this->username());
@@ -137,6 +141,28 @@ class LoginController extends Controller
             'login' => $login,
         ], 'warning');
         return false;
+    }
+
+    private function attemptLocalLogin(Request $request): bool
+    {
+        $login = trim((string) $request->input($this->username()));
+        $password = (string) $request->input('password');
+
+        if ($login === '' || $password === '') {
+            return false;
+        }
+
+        $user = User::query()
+            ->where('email', $login)
+            ->orWhere('name', $login)
+            ->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            return false;
+        }
+
+        $this->guard()->login($user, $request->filled('remember'));
+        return true;
     }
 
     protected function authenticated(Request $request, $user)

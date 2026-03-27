@@ -6,6 +6,14 @@
         <p class="text-muted mb-0">Relatório exaustivo de reprodução, eventos e desempenho.</p>
       </div>
       <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-light" @click="exportExcel" :disabled="exportLoading">
+          <i class="bi bi-file-earmark-excel me-1"></i>
+          {{ exportLoading ? 'A exportar...' : 'Exportar Excel' }}
+        </button>
+        <button class="btn btn-primary" @click="exportAndEmail" :disabled="emailLoading">
+          <i class="bi bi-envelope-paper me-1"></i>
+          {{ emailLoading ? 'A enviar...' : 'Exportar e Enviar' }}
+        </button>
         <button class="btn btn-outline-secondary" @click="refreshAll" :disabled="loading">
           <i class="bi bi-arrow-clockwise me-1"></i>
           Atualizar
@@ -36,7 +44,7 @@
             <select class="form-select" v-model="filters.platform">
               <option value="">Todas</option>
               <option value="windows">Windows</option>
-              <option value="mac">Mac</option>
+              <option value="mac">macOS</option>
               <option value="linux">Linux</option>
               <option value="unknown">Desconhecida</option>
             </select>
@@ -50,7 +58,7 @@
               <option value="popup_opened">Popup aberto</option>
               <option value="popup_minimized">Popup minimizado</option>
               <option value="autoplay_blocked">Autoplay bloqueado</option>
-              <option value="user_closed">Fechado pelo usuário</option>
+              <option value="user_closed">Fechado pelo utilizador</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -76,6 +84,24 @@
               <option :value="50">50</option>
               <option :value="100">100</option>
             </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small text-muted">Destino do envio</label>
+            <select class="form-select" v-model="emailRecipientKey">
+              <option value="current_user">Meu email ({{ currentUser.email || 'indisponível' }})</option>
+              <option
+                v-for="group in emailGroups"
+                :key="`group-${group.id}`"
+                :value="`group:${group.id}`">
+                Grupo AD: {{ group.name }} ({{ group.email }})
+              </option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small text-muted">Resumo do envio</label>
+            <div class="form-control bg-transparent d-flex align-items-center">
+              {{ selectedRecipientLabel }}
+            </div>
           </div>
           <div class="col-12 d-flex gap-2">
             <button class="btn btn-primary" @click="applyFilters" :disabled="loading">
@@ -116,7 +142,7 @@
               </div>
             </div>
             <div v-else class="text-center text-muted py-4">
-              Nenhum dado disponível para o período selecionado.
+              Nenhum dado disponível para o período seleccionado.
             </div>
           </div>
         </div>
@@ -137,7 +163,7 @@
               </div>
             </div>
             <div v-if="platformDistribution.length === 0" class="text-center text-muted py-4">
-              Nenhuma plataforma registrada.
+              Nenhuma plataforma registada.
             </div>
           </div>
         </div>
@@ -156,7 +182,7 @@
               <span class="badge bg-secondary">{{ event.count }}</span>
             </div>
             <div v-if="eventBreakdown.length === 0" class="text-center text-muted py-4">
-              Nenhum evento registrado.
+              Nenhum evento registado.
             </div>
           </div>
         </div>
@@ -172,7 +198,7 @@
               <span class="badge bg-primary">{{ video.count }}</span>
             </div>
             <div v-if="topVideos.length === 0" class="text-center text-muted py-4">
-              Nenhum vídeo registrado.
+              Nenhum vídeo registado.
             </div>
           </div>
         </div>
@@ -182,7 +208,7 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">Relatórios detalhados</h5>
-        <span class="badge bg-info">{{ pagination.total }} registros</span>
+        <span class="badge bg-info">{{ pagination.total }} registos</span>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -193,7 +219,7 @@
                 <th>Evento</th>
                 <th>Plataforma</th>
                 <th>Data/Hora</th>
-                <th>Duração</th>
+                <th>Momento da acção</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -203,7 +229,7 @@
                 <td>{{ formatEvent(report.event_type) }}</td>
                 <td><span class="badge bg-secondary">{{ formatPlatform(report.platform) }}</span></td>
                 <td>{{ formatDate(report.viewed_at) }}</td>
-                <td>{{ report.duration ? report.duration + 's' : '-' }}</td>
+                <td>{{ report.duration_label || '-' }}</td>
                 <td>
                   <span class="badge" :class="report.completed ? 'bg-success' : 'bg-warning'">
                     {{ report.completed ? 'Concluído' : 'Parcial' }}
@@ -240,6 +266,8 @@ export default {
   data() {
     return {
       loading: false,
+      exportLoading: false,
+      emailLoading: false,
       filters: {
         startDate: '',
         endDate: '',
@@ -252,6 +280,12 @@ export default {
       },
       stats: {},
       reports: [],
+      currentUser: {
+        email: '',
+        name: ''
+      },
+      emailGroups: [],
+      emailRecipientKey: 'current_user',
       pagination: {
         current_page: 1,
         last_page: 1,
@@ -289,12 +323,49 @@ export default {
     },
     topVideos() {
       return this.stats.top_videos || [];
+    },
+    selectedRecipientLabel() {
+      if (this.emailRecipientKey === 'current_user') {
+        return this.currentUser.email
+          ? `Envio para o utilizador actual: ${this.currentUser.email}`
+          : 'O utilizador actual não tem email configurado.';
+      }
+
+      const groupId = Number(this.emailRecipientKey.split(':')[1]);
+      const group = this.emailGroups.find(item => item.id === groupId);
+
+      return group
+        ? `Envio para o grupo AD ${group.name} (${group.email})`
+        : 'Seleccione um destinatário válido.';
     }
   },
   mounted() {
+    this.loadRecipients();
     this.refreshAll();
   },
   methods: {
+    async loadRecipients() {
+      const [userResponse, groupResponse] = await Promise.all([
+        this.$http.get('/api/current-user'),
+        this.$http.get('/api/ad-groups')
+      ]);
+
+      this.currentUser = userResponse.data || { email: '', name: '' };
+      this.emailGroups = (groupResponse.data.groups || []).filter(group => !!group.email);
+    },
+    buildQueryParams(includePaging = true) {
+      return {
+        video_id: this.filters.videoId || undefined,
+        start_date: this.filters.startDate || undefined,
+        end_date: this.filters.endDate || undefined,
+        platform: this.filters.platform || undefined,
+        event_type: this.filters.eventType || undefined,
+        completed: this.filters.completed !== '' ? this.filters.completed : undefined,
+        group_by: this.filters.groupBy || 'day',
+        per_page: includePaging ? this.filters.perPage : undefined,
+        page: includePaging ? this.pagination.current_page : undefined
+      };
+    },
     async refreshAll() {
       this.loading = true;
       await Promise.all([this.fetchStats(), this.fetchReports()]);
@@ -318,28 +389,14 @@ export default {
       await this.applyFilters();
     },
     async fetchStats() {
-      const params = {
-        video_id: this.filters.videoId || undefined,
-        start_date: this.filters.startDate || undefined,
-        end_date: this.filters.endDate || undefined,
-        group_by: this.filters.groupBy || 'day'
-      };
+      const params = this.buildQueryParams(false);
       const response = await this.$http.get('/api/videos/report/stats', { params });
       if (response.data && response.data.success) {
         this.stats = response.data.stats || {};
       }
     },
     async fetchReports() {
-      const params = {
-        video_id: this.filters.videoId || undefined,
-        start_date: this.filters.startDate || undefined,
-        end_date: this.filters.endDate || undefined,
-        platform: this.filters.platform || undefined,
-        event_type: this.filters.eventType || undefined,
-        completed: this.filters.completed !== '' ? this.filters.completed : undefined,
-        per_page: this.filters.perPage,
-        page: this.pagination.current_page
-      };
+      const params = this.buildQueryParams(true);
       const response = await this.$http.get('/api/reports', { params });
       if (response.data && response.data.success) {
         this.reports = response.data.reports.data || [];
@@ -355,6 +412,55 @@ export default {
       this.pagination.current_page = page;
       await this.fetchReports();
     },
+    async exportExcel() {
+      this.exportLoading = true;
+
+      try {
+        const response = await this.$http.get('/api/reports/export', {
+          params: this.buildQueryParams(false),
+          responseType: 'blob'
+        });
+
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `relatorios-video-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        window.alert(error.response?.data?.message || 'Não foi possível exportar o relatório.');
+      } finally {
+        this.exportLoading = false;
+      }
+    },
+    async exportAndEmail() {
+      this.emailLoading = true;
+
+      try {
+        const payload = {
+          ...this.buildQueryParams(false),
+          recipient_type: this.emailRecipientKey === 'current_user' ? 'current_user' : 'ad_group',
+          ad_group_id: this.emailRecipientKey.startsWith('group:')
+            ? Number(this.emailRecipientKey.split(':')[1])
+            : undefined
+        };
+
+        const response = await this.$http.post('/api/reports/export-email', payload);
+        window.alert(response.data.message || 'Relatório enviado com sucesso.');
+      } catch (error) {
+        const message = error.response?.data?.message
+          || error.response?.data?.errors
+          || 'Não foi possível enviar o relatório por email.';
+        window.alert(typeof message === 'string' ? message : 'Não foi possível enviar o relatório por email.');
+      } finally {
+        this.emailLoading = false;
+      }
+    },
     timelineHeight(value) {
       const max = Math.max(...this.timeline.map(item => item.count), 1);
       return Math.round((value / max) * 100);
@@ -362,7 +468,8 @@ export default {
     formatPlatform(value) {
       const map = {
         windows: 'Windows',
-        mac: 'Mac',
+        mac: 'macOS',
+        darwin: 'macOS',
         linux: 'Linux',
         unknown: 'Desconhecida'
       };
@@ -370,12 +477,22 @@ export default {
     },
     formatEvent(value) {
       const map = {
-        playback_started: 'Início',
-        video_completed: 'Concluído',
+        playback_started: 'Início da reprodução',
+        playback_paused: 'Reprodução em pausa',
+        playback_resumed: 'Reprodução retomada',
+        playback_completed: 'Reprodução concluída',
+        playback_25_percent: 'Reprodução a 25 por cento',
+        playback_50_percent: 'Reprodução a 50 por cento',
+        playback_75_percent: 'Reprodução a 75 por cento',
+        video_completed: 'Vídeo concluído',
+        video_loaded: 'Vídeo carregado',
+        video_interrupted: 'Vídeo interrompido',
         popup_opened: 'Popup aberto',
         popup_minimized: 'Popup minimizado',
         autoplay_blocked: 'Autoplay bloqueado',
-        user_closed: 'Fechado pelo usuário'
+        autoplay_started: 'Reprodução automática iniciada',
+        user_closed: 'Fechado pelo utilizador',
+        window_loaded: 'Janela carregada'
       };
       return map[value] || value || 'Evento';
     },

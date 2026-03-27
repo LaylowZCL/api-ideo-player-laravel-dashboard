@@ -3,7 +3,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
       <div>
         <h1 class="h2 mb-1">Alvos AD</h1>
-        <p class="text-muted mb-0">Auditoria do JSON diário e targeting por máquina/utilizador.</p>
+        <p class="text-muted mb-0">Auditoria do JSON diário e direccionamento por máquina/utilizador.</p>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-secondary" @click="loadTargets" :disabled="loading">
@@ -17,7 +17,7 @@
       <div class="col-lg-7">
         <div class="card h-100">
           <div class="card-header">
-            <h5 class="card-title mb-0">Saúde do AD</h5>
+            <h5 class="card-title mb-0">Estado do AD</h5>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -78,7 +78,7 @@
             <input type="text" class="form-control" v-model="filters.machine" placeholder="DISPLAY001">
           </div>
           <div class="col-md-3">
-            <label class="form-label small text-muted">Usuário</label>
+            <label class="form-label small text-muted">Utilizador</label>
             <input type="text" class="form-control" v-model="filters.user" placeholder="joao">
           </div>
           <div class="col-md-4">
@@ -112,7 +112,7 @@
             <thead>
               <tr>
                 <th>Máquina</th>
-                <th>Usuário</th>
+                <th>Utilizador</th>
                 <th>Grupo</th>
                 <th>Efetivo em</th>
                 <th>Origem</th>

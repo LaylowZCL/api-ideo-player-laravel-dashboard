@@ -38,6 +38,7 @@ class MakeSuperAdmin extends Command
             $user->update([
                 'user_type' => 'super_admin',
                 'role' => 'super_admin',
+                'permissions' => User::MODULE_PERMISSIONS,
             ]);
             $this->info("✓ Super admin role granted to existing user: {$email}");
             $this->info("  User ID: {$user->id}");
@@ -63,6 +64,7 @@ class MakeSuperAdmin extends Command
                 'password' => Hash::make($password),
                 'user_type' => 'super_admin',
                 'role' => 'super_admin',
+                'permissions' => User::MODULE_PERMISSIONS,
                 'email_verified_at' => now(),
             ]);
 

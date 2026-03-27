@@ -137,6 +137,19 @@ table, .table {
     color: var(--text-primary);
 }
 
+.table td,
+.table tbody td,
+.table-responsive td,
+.table-responsive tbody td,
+.table > :not(caption) > * > * {
+    color: #ffffff !important;
+}
+
+.table td .text-muted,
+.table tbody td .text-muted {
+    color: #d8c394 !important;
+}
+
 .table-dark {
     background-color: #15325f !important;
     color: #f5f2e9 !important;

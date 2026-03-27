@@ -3,8 +3,8 @@
   <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
       <div>
-        <h1 class="h2 mb-1">Gerenciamento de Vídeos</h1>
-        <p class="text-muted mb-0">Controle do cache local e sincronização com a API</p>
+        <h1 class="h2 mb-1">Gestão de Vídeos</h1>
+        <p class="text-muted mb-0">Controlo da cache local e sincronização com a API</p>
       </div>
       <div class="d-flex align-items-center gap-3">
         <button class="btn btn-outline-secondary" @click="refreshVideos" :disabled="isRefreshing">
@@ -13,7 +13,7 @@
         </button>
         <button class="btn btn-primary" @click="showUploadModal">
           <i class="bi bi-upload me-1"></i>
-          Upload Manual
+          Carregamento manual
         </button>
       </div>
     </div>
@@ -39,7 +39,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <p class="small text-muted mb-1">Em Cache</p>
+              <p class="small text-muted mb-1">Em cache</p>
               <h3 class="h4 mb-0">{{ stats.cached_videos }}</h3>
             </div>
             <i class="bi bi-hdd fs-2 text-success"></i>
@@ -67,7 +67,7 @@
             <div>
               <p class="small text-muted mb-1">Status da API</p>
               <h3 class="h4 mb-0" :class="stats.api_status === 'online' ? 'text-success' : 'text-danger'">
-                {{ stats.api_status === 'online' ? 'Online' : 'Offline' }}
+                {{ stats.api_status === 'online' ? 'Em linha' : 'Offline' }}
               </h3>
             </div>
             <i class="bi bi-wifi fs-2" :class="stats.api_status === 'online' ? 'text-success' : 'text-danger'"></i>
@@ -85,7 +85,7 @@
         <input
           type="text"
           class="form-control ps-5"
-          placeholder="Buscar por título ou nome..."
+          placeholder="Pesquisar por título ou nome..."
           v-model="searchTerm"
           @input="filterVideos"
         >
@@ -103,7 +103,7 @@
     <div class="col-md-3">
       <button class="btn btn-outline-secondary w-100" @click="clearFilters">
         <i class="bi bi-x-circle me-1"></i>
-        Limpar Filtros
+        Limpar filtros
       </button>
     </div>
   </div>
@@ -118,7 +118,7 @@
             <small class="text-muted">Configuração aplicada aos clientes.</small>
           </div>
           <button class="btn btn-primary btn-sm" @click="savePopupSettings" :disabled="isSavingPopup">
-            {{ isSavingPopup ? 'Salvando...' : 'Aplicar' }}
+            {{ isSavingPopup ? 'A guardar...' : 'Aplicar' }}
           </button>
         </div>
         <div class="card-body">
@@ -169,9 +169,9 @@
   <div id="videos-list">
     <div v-if="loading" class="text-center py-4">
       <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Carregando...</span>
+        <span class="visually-hidden">A carregar...</span>
       </div>
-      <p class="text-muted mt-2">Carregando vídeos...</p>
+      <p class="text-muted mt-2">A carregar vídeos...</p>
     </div>
 
     <div v-else-if="filteredVideos.length === 0" class="text-center py-5">
@@ -245,7 +245,7 @@
               class="btn btn-outline-primary btn-sm" 
               @click="previewVideo(video)"
               :disabled="!video.cached && !video.url"
-              :title="!video.cached && !video.url ? 'Vídeo não disponível para preview' : 'Preview do vídeo'"
+              :title="!video.cached && !video.url ? 'Vídeo não disponível para pré-visualização' : 'Pré-visualização do vídeo'"
             >
               <i class="bi bi-play"></i>
             </button>
@@ -302,7 +302,7 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content bg-dark text-light">
         <div class="modal-header border-secondary">
-          <h5 class="modal-title">Upload de Vídeo para API</h5>
+          <h5 class="modal-title">Carregamento de Vídeo para a API</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" @click="closeUploadModal"></button>
         </div>
         <div class="modal-body">
@@ -337,9 +337,9 @@
               <div class="col-md-12" v-if="uploadData.file">
                 <div class="alert alert-info">
                   <i class="bi bi-info-circle me-2"></i>
-                  Arquivo selecionado: <strong>{{ uploadData.file.name }}</strong>
+                  Ficheiro seleccionado: <strong>{{ uploadData.file.name }}</strong>
                   ({{ formatFileSize(uploadData.file.size) }})<br>
-                  <span v-if="isReadingDuration">Lendo duração do vídeo...</span>
+                  <span v-if="isReadingDuration">A ler a duração do vídeo...</span>
                   <span v-else>Duração detectada: <strong>{{ uploadData.duration || 'Não identificada' }}</strong></span>
                 </div>
               </div>
@@ -347,7 +347,7 @@
               <div class="col-md-12" v-if="uploadData.subtitles && uploadData.subtitles.length">
                 <div class="alert alert-secondary">
                   <i class="bi bi-subtitles me-2"></i>
-                  Legendas selecionadas:
+                  Legendas seleccionadas:
                   <ul class="mb-0 mt-2">
                     <li v-for="(sub, index) in uploadData.subtitles" :key="index">
                       {{ sub.name }}
@@ -478,12 +478,12 @@
     </div>
   </div>
 
-  <!-- Modal de Preview -->
+  <!-- Modal de Pré-visualização -->
   <div class="modal fade" id="previewModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content bg-dark text-light">
         <div class="modal-header border-secondary">
-          <h5 class="modal-title">Preview do Vídeo</h5>
+          <h5 class="modal-title">Pré-visualização do Vídeo</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" @click="closePreviewModal"></button>
         </div>
         <div class="modal-body">
@@ -549,7 +549,7 @@ data() {
       preset: 'custom'
     },
     systemSettingsPayload: null,
-    popupSaveStatus: 'Carregando configurações...',
+    popupSaveStatus: 'A carregar configurações...',
     isSavingPopup: false
   };
 },
@@ -641,10 +641,10 @@ mounted() {
         this.systemSettingsPayload = response.data.settings;
         this.popupSaveStatus = 'Configurações aplicadas com sucesso.';
       } else {
-        this.popupSaveStatus = 'Falha ao salvar configurações.';
+        this.popupSaveStatus = 'Falha ao guardar configurações.';
       }
     } catch (error) {
-      this.popupSaveStatus = 'Erro ao salvar configurações.';
+      this.popupSaveStatus = 'Erro ao guardar configurações.';
     } finally {
       this.isSavingPopup = false;
     }
@@ -836,15 +836,15 @@ mounted() {
       const response = await axios.put(`/api/videos/${this.editVideoData.id}`, payload);
 
       if (response.data.success) {
-        this.showToast('Sucesso', response.data.message || 'Vídeo atualizado com sucesso', 'success');
+        this.showToast('Sucesso', response.data.message || 'Vídeo actualizado com sucesso', 'success');
         this.closeEditVideoModal();
         await this.loadVideos();
       } else {
-        throw new Error(response.data.message || 'Falha ao atualizar vídeo');
+        throw new Error(response.data.message || 'Falha ao actualizar vídeo');
       }
     } catch (error) {
-      console.error('Erro ao atualizar vídeo:', error);
-      this.showToast('Erro', error.response?.data?.message || 'Falha ao atualizar vídeo', 'error');
+      console.error('Erro ao actualizar vídeo:', error);
+      this.showToast('Erro', error.response?.data?.message || 'Falha ao actualizar vídeo', 'error');
     } finally {
       this.isSavingVideoEdit = false;
     }
@@ -879,7 +879,7 @@ mounted() {
       this.uploadData.duration = this.formatDuration(durationSeconds);
     } catch (error) {
       console.error('Erro ao ler duração do vídeo:', error);
-      this.showToast('Erro', 'Não foi possível identificar a duração do vídeo selecionado', 'error');
+      this.showToast('Erro', 'Não foi possível identificar a duração do vídeo seleccionado', 'error');
     } finally {
       this.isReadingDuration = false;
     }

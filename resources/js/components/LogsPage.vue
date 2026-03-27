@@ -47,8 +47,8 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label">Buscar</label>
-            <input type="text" class="form-control" placeholder="Buscar por evento ou vídeo" v-model="filters.search" />
+            <label class="form-label">Pesquisar</label>
+            <input type="text" class="form-control" placeholder="Pesquisar por evento ou vídeo" v-model="filters.search" />
           </div>
           <div class="col-md-2 d-flex align-items-end">
             <button class="btn btn-outline-secondary w-100" @click="resetFilters">
@@ -122,7 +122,7 @@
     <!-- Contador -->
     <div class="d-flex justify-content-between align-items-center mt-3">
       <small class="text-muted">
-        Mostrando {{ filteredLogs.length }} de {{ logs.length }} registros
+        A mostrar {{ filteredLogs.length }} de {{ logs.length }} registos
       </small>
       <nav>
         <ul class="pagination pagination-sm mb-0">

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Preview - ZK Interactive')
+@section('title', 'Pré-visualização - ZK Interactive')
 
 @section('content')
     <div id="previews-section" class="content-section">

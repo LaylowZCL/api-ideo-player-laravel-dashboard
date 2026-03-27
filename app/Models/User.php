@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'user_type',
         'role',
+        'permissions',
         'is_superadmin',
         'is_admin',
         'is_manager',
@@ -49,6 +50,21 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'two_factor_confirmed_at' => 'datetime',
+        'permissions' => 'array',
+    ];
+
+    public const MODULE_PERMISSIONS = [
+        'dashboard',
+        'videos',
+        'schedules',
+        'reports',
+        'users',
+        'groups',
+        'targets',
+        'clients',
+        'campaigns',
+        'logs',
+        'settings',
     ];
 
     public function hasTwoFactorEnabled(): bool
@@ -91,5 +107,47 @@ class User extends Authenticatable
         }
 
         return 'user';
+    }
+
+    public function permissionList(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return self::MODULE_PERMISSIONS;
+        }
+
+        $permissions = $this->permissions;
+        if (is_array($permissions) && !empty($permissions)) {
+            return array_values(array_unique(array_intersect(self::MODULE_PERMISSIONS, $permissions)));
+        }
+
+        return $this->defaultPermissionsForRole($this->roleName());
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return in_array($permission, $this->permissionList(), true);
+    }
+
+    public function syncLegacyRoleFields(): void
+    {
+        $role = $this->roleName();
+        $this->user_type = $role;
+        $this->is_superadmin = $role === 'super_admin';
+        $this->is_admin = in_array($role, ['super_admin', 'admin'], true);
+        $this->is_manager = in_array($role, ['super_admin', 'admin', 'manager'], true);
+    }
+
+    public static function defaultPermissionsForRole(string $role): array
+    {
+        return match ($role) {
+            'super_admin' => self::MODULE_PERMISSIONS,
+            'admin' => ['dashboard', 'videos', 'schedules', 'reports', 'users', 'groups', 'targets', 'clients', 'campaigns', 'logs', 'settings'],
+            'manager' => ['dashboard', 'videos', 'schedules', 'reports', 'clients', 'campaigns'],
+            default => ['dashboard', 'reports'],
+        };
     }
 }
