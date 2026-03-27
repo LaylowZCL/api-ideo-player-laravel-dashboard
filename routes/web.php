@@ -51,25 +51,25 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware(['auth', 'two_factor'])->name('dashboard');
 Route::get('/api/dashboard', [DashboardController::class, 'getDashboardData'])->middleware('api.auth');
-Route::view('/relatorios', 'reports')->name('reports');
-Route::get('/video', [VideoController::class, 'goToVideos'])->name('videos');
-Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->name('schedule');
-Route::get('/logs', [LogController::class, 'goToLogs'])->name('logs');
+Route::view('/relatorios', 'reports')->middleware(['auth', 'two_factor'])->name('reports');
+Route::get('/video', [VideoController::class, 'goToVideos'])->middleware(['auth', 'two_factor'])->name('videos');
+Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->middleware(['auth', 'two_factor'])->name('schedule');
+Route::get('/logs', [LogController::class, 'goToLogs'])->middleware(['auth', 'two_factor'])->name('logs');
 
 // Admin views
-Route::view('/admin', 'admin.index')->middleware(['auth', 'can:isAdmin'])->name('admin.index');
-Route::view('/admin/grupos', 'admin.ad-groups')->middleware(['auth', 'can:isAdmin'])->name('admin.groups');
-Route::view('/admin/clientes', 'admin.clients')->middleware(['auth', 'can:isAdmin'])->name('admin.clients');
-Route::view('/admin/campanhas', 'admin.campaigns')->middleware(['auth', 'can:isAdmin'])->name('admin.campaigns');
-Route::view('/admin/logs', 'admin.logs')->middleware(['auth', 'can:isAdmin'])->name('admin.logs');
-Route::view('/admin/alvos', 'admin.ad-targets')->middleware(['auth', 'can:isAdmin'])->name('admin.targets');
-Route::get('/preview', [PreviewController::class, 'goToPreview'])->name('preview');
-Route::get('/settings', [SettingController::class, 'goToSettings'])->name('settings');
-Route::get('/users', [UserController::class, 'goToUsers'])->name('users');
+Route::view('/admin', 'admin.index')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.index');
+Route::view('/admin/grupos', 'admin.ad-groups')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.groups');
+Route::view('/admin/clientes', 'admin.clients')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.clients');
+Route::view('/admin/campanhas', 'admin.campaigns')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.campaigns');
+Route::view('/admin/logs', 'admin.logs')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.logs');
+Route::view('/admin/alvos', 'admin.ad-targets')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.targets');
+Route::get('/preview', [PreviewController::class, 'goToPreview'])->middleware(['auth', 'two_factor'])->name('preview');
+Route::get('/settings', [SettingController::class, 'goToSettings'])->middleware(['auth', 'two_factor'])->name('settings');
+Route::get('/users', [UserController::class, 'goToUsers'])->middleware(['auth', 'two_factor'])->name('users');
 
-Route::middleware(['auth'])->prefix('api')->group(function () {
+Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     Route::get('/current-user', function (Request $request) {
         $user = $request->user();
 
