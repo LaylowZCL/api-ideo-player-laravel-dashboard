@@ -6,9 +6,39 @@ use Illuminate\Support\Facades\Log;
 
 class AdGroupJsonService
 {
+    public function getTargetRecords(): array
+    {
+        $path = $this->resolvePath(config('ad.group_json_path'));
+        if (!$path) {
+            return [];
+        }
+
+        $data = $this->readJsonFile($path);
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $records = [];
+
+        foreach ($data as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeTargetRecord($record);
+            if ($normalized === null) {
+                continue;
+            }
+
+            $records[] = $normalized;
+        }
+
+        return $records;
+    }
+
     public function getGroupsForMachine(string $machine, ?string $username = null): array
     {
-        $records = $this->readRecords();
+        $records = $this->getTargetRecords();
         if (empty($records)) {
             return [];
         }
@@ -19,7 +49,7 @@ class AdGroupJsonService
         $username = $username ? mb_strtolower(trim($username)) : null;
 
         foreach ($records as $record) {
-            $recordMachine = $this->value($record, ['Maquina', 'maquina', 'machine', 'Machine']);
+            $recordMachine = $record['machine'] ?? null;
             if (!$recordMachine) {
                 continue;
             }
@@ -29,13 +59,13 @@ class AdGroupJsonService
             }
 
             if ($username) {
-                $recordUser = $this->value($record, ['Usuario', 'usuario', 'user', 'User', 'username', 'Username']);
+                $recordUser = $record['user'] ?? null;
                 if ($recordUser && mb_strtolower(trim($recordUser)) !== $username) {
                     continue;
                 }
             }
 
-            $group = $this->value($record, ['Grupo', 'grupo', 'group', 'Group']);
+            $group = $record['group'] ?? null;
             if ($group) {
                 $groups[] = trim($group);
             }
@@ -59,19 +89,37 @@ class AdGroupJsonService
         return $data;
     }
 
-    private function readRecords(): array
+    public function normalizeTargetRecord(array $record): ?array
     {
-        $path = $this->resolvePath(config('ad.group_json_path'));
-        if (!$path) {
-            return [];
+        $machine = $this->value($record, ['Maquina', 'maquina', 'machine', 'Machine']);
+        $user = $this->value($record, ['Usuario', 'usuario', 'user', 'User', 'username', 'Username']);
+        $name = $this->value($record, ['Nome', 'nome', 'name', 'Name', 'display_name']);
+        $email = $this->value($record, ['Email', 'email', 'mail', 'Mail']);
+        $group = $this->value($record, ['Grupo', 'grupo', 'group', 'Group']);
+        $effectiveAt = $this->value($record, ['Data', 'data', 'Date', 'date']);
+
+        $machine = $machine ? trim($machine) : null;
+        $user = $user ? trim($user) : null;
+        $name = $name ? trim($name) : null;
+        $email = $email ? mb_strtolower(trim($email)) : null;
+        $group = $group ? trim($group) : null;
+        $effectiveAt = $effectiveAt ? trim($effectiveAt) : null;
+
+        if (!$machine || !$group) {
+            return null;
         }
 
-        $data = $this->readJsonFile($path);
-        if (!is_array($data)) {
-            return [];
-        }
-
-        return $data;
+        return [
+            'machine' => mb_strtolower($machine),
+            'machine_original' => $machine,
+            'user' => $user ? mb_strtolower($user) : null,
+            'user_original' => $user,
+            'name' => $name,
+            'email' => $email,
+            'group' => $group,
+            'effective_at' => $effectiveAt,
+            'source' => 'json',
+        ];
     }
 
     private function readJsonFile(string $path)

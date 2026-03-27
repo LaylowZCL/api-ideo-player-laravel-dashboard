@@ -7,6 +7,10 @@
           <p class="text-muted mb-0">Personalize o comportamento do VideoScheduler</p>
         </div>
         <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-outline-secondary" @click="actualizarJson" :disabled="isLoading">
+            <i class="bi bi-arrow-repeat me-1"></i>
+            Actualizar JSON
+          </button>
           <button class="btn btn-outline-secondary" @click="resetSettings">
             <i class="bi bi-arrow-clockwise me-1"></i>
             Restaurar Padrão
@@ -401,6 +405,36 @@ export default {
           } catch (error) {
             console.error('Erro ao restaurar configurações:', error);
             this.showToast('Erro', 'Falha ao restaurar configurações. Tente novamente.', 'error');
+          } finally {
+            this.isLoading = false;
+          }
+        }
+      );
+    },
+    async actualizarJson() {
+      this.showConfirmModal(
+        'Tem a certeza de que pretende actualizar manualmente os grupos e alvos a partir do ficheiro JSON?',
+        async () => {
+          this.isLoading = true;
+          try {
+            const response = await axios.get('/actualizar-json');
+
+            if (response.data.success) {
+              const message = response.data.output
+                ? `${response.data.message} ${response.data.output}`
+                : response.data.message;
+
+              this.showToast('JSON actualizado', message, 'success');
+            } else {
+              this.showToast('Erro', response.data.message || 'Falha ao actualizar o ficheiro JSON.', 'error');
+            }
+          } catch (error) {
+            console.error('Erro ao actualizar JSON:', error);
+            this.showToast(
+              'Erro',
+              error.response?.data?.message || 'Falha ao actualizar o ficheiro JSON. Tente novamente.',
+              'error'
+            );
           } finally {
             this.isLoading = false;
           }

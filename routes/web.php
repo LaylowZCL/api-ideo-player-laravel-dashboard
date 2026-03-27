@@ -211,3 +211,30 @@ Route::get('/clear-all', function () {
         'message' => 'Caches limpos com sucesso.',
     ]);
 })->middleware(['auth', 'throttle:10,1'])->name('ops.clear-all');
+
+Route::get('/actualizar-json', function () {
+    $user = auth()->user();
+    if (!$user || !$user->can('isAdmin')) {
+        abort(403, 'Unauthorized. Admin access required.');
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('ad:import-json');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ficheiro JSON importado com sucesso.',
+            'output' => trim(\Illuminate\Support\Facades\Artisan::output()),
+        ]);
+    } catch (\Throwable $exception) {
+        \Illuminate\Support\Facades\Log::error('Falha ao actualizar JSON AD via rota manual.', [
+            'user_id' => $user->id,
+            'error' => $exception->getMessage(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Não foi possível actualizar o ficheiro JSON.',
+        ], 500);
+    }
+})->middleware(['auth', 'two_factor', 'throttle:10,1'])->name('ops.actualizar-json');

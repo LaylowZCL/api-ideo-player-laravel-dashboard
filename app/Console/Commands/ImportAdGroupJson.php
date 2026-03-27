@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AdGroup;
 use App\Models\AdGroupTarget;
 use App\Models\Client;
+use App\Services\AdGroupJsonService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -17,12 +18,16 @@ class ImportAdGroupJson extends Command
     public function handle(): int
     {
         $path = $this->option('path') ?: config('ad.group_json_path');
-        if (!$path || !is_file($path)) {
+        /** @var AdGroupJsonService $jsonService */
+        $jsonService = app(AdGroupJsonService::class);
+        $resolvedPath = $this->resolveInputPath($path);
+
+        if (!$resolvedPath || !is_file($resolvedPath)) {
             $this->error('Arquivo JSON não encontrado: ' . ($path ?: 'null'));
             return self::FAILURE;
         }
 
-        $raw = json_decode(file_get_contents($path), true);
+        $raw = json_decode(file_get_contents($resolvedPath), true);
         if (!is_array($raw)) {
             $this->error('JSON inválido.');
             return self::FAILURE;
@@ -35,27 +40,23 @@ class ImportAdGroupJson extends Command
                 continue;
             }
 
-            $machine = $record['Maquina'] ?? $record['maquina'] ?? $record['Machine'] ?? $record['machine'] ?? null;
-            $user = $record['Usuario'] ?? $record['usuario'] ?? $record['User'] ?? $record['user'] ?? $record['username'] ?? $record['Username'] ?? null;
-            $group = $record['Grupo'] ?? $record['grupo'] ?? $record['Group'] ?? $record['group'] ?? null;
-            $date = $record['Data'] ?? $record['data'] ?? $record['Date'] ?? $record['date'] ?? null;
-            if (!$machine || !$group) {
+            $normalized = $jsonService->normalizeTargetRecord($record);
+            if ($normalized === null) {
                 continue;
             }
 
-            $machineKey = mb_strtolower(trim((string) $machine));
-            $groupName = trim((string) $group);
-            $userKey = $user ? mb_strtolower(trim((string) $user)) : null;
-            if ($machineKey === '' || $groupName === '') {
-                continue;
-            }
+            $machineKey = $normalized['machine'];
+            $groupName = $normalized['group'];
+            $userKey = $normalized['user'];
 
             $byMachine[$machineKey][] = $groupName;
             $targets[] = [
                 'machine' => $machineKey,
                 'user' => $userKey,
+                'user_display_name' => $normalized['name'] ?? null,
+                'user_email' => $normalized['email'] ?? null,
                 'group' => $groupName,
-                'effective_at' => $this->parseDate($date),
+                'effective_at' => $this->parseDate($normalized['effective_at']),
             ];
         }
 
@@ -104,6 +105,8 @@ class ImportAdGroupJson extends Command
                 ],
                 [
                     'client_id' => $client?->id,
+                    'user_display_name' => $target['user_display_name'],
+                    'user_email' => $target['user_email'],
                     'effective_at' => $target['effective_at'],
                     'source' => 'json',
                 ]
@@ -116,7 +119,7 @@ class ImportAdGroupJson extends Command
 
         $status = [
             'last_import_at' => now()->toDateTimeString(),
-            'source_path' => $path,
+            'source_path' => $resolvedPath,
             'records' => count($raw),
             'clients_created' => $createdClients,
             'clients_updated' => $updatedClients,
@@ -137,5 +140,28 @@ class ImportAdGroupJson extends Command
         } catch (\Throwable $e) {
             return now();
         }
+    }
+
+    private function resolveInputPath(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (is_file($path)) {
+            return $path;
+        }
+
+        $basePath = base_path($path);
+        if (is_file($basePath)) {
+            return $basePath;
+        }
+
+        $storagePath = storage_path(ltrim($path, '/'));
+        if (is_file($storagePath)) {
+            return $storagePath;
+        }
+
+        return null;
     }
 }

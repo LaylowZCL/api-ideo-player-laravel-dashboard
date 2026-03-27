@@ -10,6 +10,8 @@ class AdGroupTarget extends Model
         'client_id',
         'machine_name',
         'user_name',
+        'user_display_name',
+        'user_email',
         'ad_group_id',
         'effective_at',
         'source',

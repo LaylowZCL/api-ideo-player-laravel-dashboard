@@ -113,6 +113,8 @@
               <tr>
                 <th>Máquina</th>
                 <th>Utilizador</th>
+                <th>Nome</th>
+                <th>Email</th>
                 <th>Grupo</th>
                 <th>Efetivo em</th>
                 <th>Origem</th>
@@ -122,12 +124,14 @@
               <tr v-for="target in targets" :key="target.id">
                 <td class="fw-medium">{{ target.machine_name }}</td>
                 <td>{{ target.user_name || '-' }}</td>
+                <td>{{ target.user_display_name || '-' }}</td>
+                <td>{{ target.user_email || '-' }}</td>
                 <td>{{ target.group || '-' }}</td>
                 <td>{{ target.effective_at || '-' }}</td>
                 <td><span class="badge bg-secondary">{{ target.source }}</span></td>
               </tr>
               <tr v-if="targets.length === 0">
-                <td colspan="5" class="text-center text-muted py-4">Nenhum registo encontrado.</td>
+                <td colspan="7" class="text-center text-muted py-4">Nenhum registo encontrado.</td>
               </tr>
             </tbody>
           </table>

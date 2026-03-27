@@ -43,6 +43,8 @@ class AdTargetController extends Controller
                 'id' => $target->id,
                 'machine_name' => $target->machine_name,
                 'user_name' => $target->user_name,
+                'user_display_name' => $target->user_display_name,
+                'user_email' => $target->user_email,
                 'group' => $target->adGroup?->name,
                 'effective_at' => optional($target->effective_at)->toDateTimeString(),
                 'source' => $target->source,
