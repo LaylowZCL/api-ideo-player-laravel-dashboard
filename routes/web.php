@@ -18,6 +18,8 @@ use App\Http\Controllers\AdGroupController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\AdHealthController;
 use App\Http\Controllers\AdTargetController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Auth\FirstAccessPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 
 Route::get('/', function () {
@@ -44,6 +46,8 @@ if (config('ad.dashboard_uses_ad')) {
 }
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/primeiro-acesso', [FirstAccessPasswordController::class, 'show'])->name('force-password.edit');
+    Route::post('/primeiro-acesso', [FirstAccessPasswordController::class, 'update'])->name('force-password.update');
     Route::get('/two-factor/setup', [TwoFactorController::class, 'showSetup'])->name('two-factor.setup');
     Route::post('/two-factor/setup', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
     Route::get('/two-factor/challenge', [TwoFactorController::class, 'showChallenge'])->name('two-factor.challenge');
@@ -51,23 +55,24 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware(['auth', 'two_factor'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware(['auth', 'two_factor', 'module.access:dashboard'])->name('dashboard');
 Route::get('/api/dashboard', [DashboardController::class, 'getDashboardData'])->middleware('api.auth');
-Route::view('/relatorios', 'reports')->middleware(['auth', 'two_factor'])->name('reports');
-Route::get('/video', [VideoController::class, 'goToVideos'])->middleware(['auth', 'two_factor'])->name('videos');
-Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->middleware(['auth', 'two_factor'])->name('schedule');
-Route::get('/logs', [LogController::class, 'goToLogs'])->middleware(['auth', 'two_factor'])->name('logs');
+Route::view('/relatorios', 'reports')->middleware(['auth', 'two_factor', 'module.access:reports'])->name('reports');
+Route::get('/video', [VideoController::class, 'goToVideos'])->middleware(['auth', 'two_factor', 'module.access:videos'])->name('videos');
+Route::get('/schedule', [ScheduleController::class, 'goToSchedule'])->middleware(['auth', 'two_factor', 'module.access:schedules'])->name('schedule');
+Route::get('/logs', [LogController::class, 'goToLogs'])->middleware(['auth', 'two_factor', 'module.access:logs'])->name('logs');
+Route::get('/minha-conta', [ProfileController::class, 'showPage'])->middleware(['auth', 'two_factor'])->name('profile');
 
 // Admin views
 Route::view('/admin', 'admin.index')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.index');
-Route::view('/admin/grupos', 'admin.ad-groups')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.groups');
-Route::view('/admin/clientes', 'admin.clients')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.clients');
-Route::view('/admin/campanhas', 'admin.campaigns')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.campaigns');
-Route::view('/admin/logs', 'admin.logs')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.logs');
-Route::view('/admin/alvos', 'admin.ad-targets')->middleware(['auth', 'two_factor', 'can:isAdmin'])->name('admin.targets');
+Route::view('/admin/grupos', 'admin.ad-groups')->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:groups'])->name('admin.groups');
+Route::view('/admin/clientes', 'admin.clients')->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:clients'])->name('admin.clients');
+Route::view('/admin/campanhas', 'admin.campaigns')->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:campaigns'])->name('admin.campaigns');
+Route::view('/admin/logs', 'admin.logs')->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:logs'])->name('admin.logs');
+Route::view('/admin/alvos', 'admin.ad-targets')->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:targets'])->name('admin.targets');
 Route::get('/preview', [PreviewController::class, 'goToPreview'])->middleware(['auth', 'two_factor'])->name('preview');
-Route::get('/settings', [SettingController::class, 'goToSettings'])->middleware(['auth', 'two_factor'])->name('settings');
-Route::get('/users', [UserController::class, 'goToUsers'])->middleware(['auth', 'two_factor'])->name('users');
+Route::get('/settings', [SettingController::class, 'goToSettings'])->middleware(['auth', 'two_factor', 'module.access:settings'])->name('settings');
+Route::get('/users', [UserController::class, 'goToUsers'])->middleware(['auth', 'two_factor', 'module.access:users'])->name('users');
 
 Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     Route::get('/current-user', function (Request $request) {
@@ -77,16 +82,19 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'username' => $user->username,
             'user_type' => $user->user_type ?? 'user',
             'role' => $user->roleName(),
             'permissions' => $user->permissionList(),
         ]);
     });
 
-    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData']);
+    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])->middleware('module.access:dashboard');
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 
     // ==== VIDEOS ====
-    Route::prefix('videos')->group(function () {
+    Route::prefix('videos')->middleware('module.access:videos')->group(function () {
         Route::get('/', [VideoController::class, 'index']);
         Route::post('/upload', [VideoController::class, 'upload']);
         Route::post('/preview', [VideoController::class, 'preview']);
@@ -102,12 +110,15 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // ==== REPORTS ====
-    Route::get('/reports', [VideoReportController::class, 'index']);
-    Route::get('/reports/export', [VideoReportController::class, 'exportExcel']);
-    Route::post('/reports/export-email', [VideoReportController::class, 'emailExcel']);
+    Route::middleware('module.access:reports')->group(function () {
+        Route::get('/reports/stats', [VideoReportController::class, 'stats']);
+        Route::get('/reports', [VideoReportController::class, 'index']);
+        Route::get('/reports/export', [VideoReportController::class, 'exportExcel']);
+        Route::post('/reports/export-email', [VideoReportController::class, 'emailExcel']);
+    });
 
     // ==== SCHEDULES ====
-    Route::prefix('schedules')->group(function () {
+    Route::prefix('schedules')->middleware('module.access:schedules')->group(function () {
         Route::get('/', [ScheduleController::class, 'index']); // Listar todos
         Route::get('/videos', [ScheduleController::class, 'getVideosForDropdown']); // Vídeos para dropdown
         Route::get('/today', [ScheduleController::class, 'scheduledVideosToday']); // Agendamentos de hoje
@@ -121,15 +132,16 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // ==== USERS ====
-    Route::prefix('users')->group(function () {
+    Route::prefix('users')->middleware('module.access:users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
+        Route::post('/from-ad-target', [UserController::class, 'storeFromAdTarget']);
         Route::put('/{id}', [UserController::class, 'update']);
         Route::delete('/{id}', [UserController::class, 'destroy']);
     });
 
     // ==== CAMPAIGNS ====
-    Route::prefix('campaigns')->group(function () {
+    Route::prefix('campaigns')->middleware('module.access:campaigns')->group(function () {
         Route::get('/', [CampaignController::class, 'index']);
         Route::post('/', [CampaignController::class, 'store']);
         Route::put('/{id}', [CampaignController::class, 'update']);
@@ -137,7 +149,7 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // ==== AD GROUPS ====
-    Route::prefix('ad-groups')->group(function () {
+    Route::prefix('ad-groups')->middleware('module.access:groups')->group(function () {
         Route::get('/', [AdGroupController::class, 'index']);
         Route::post('/', [AdGroupController::class, 'store']);
         Route::put('/{id}', [AdGroupController::class, 'update']);
@@ -145,31 +157,33 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // ==== CLIENTS ====
-    Route::prefix('clients')->group(function () {
+    Route::prefix('clients')->middleware('module.access:clients')->group(function () {
         Route::get('/', [ClientController::class, 'index']);
         Route::put('/{id}', [ClientController::class, 'update']);
     });
 
     // ==== LOGS ====
-    Route::prefix('logs')->group(function () {
+    Route::prefix('logs')->middleware('module.access:logs')->group(function () {
         Route::get('/', [LogController::class, 'indexJson']);
         Route::delete('/', [LogController::class, 'clearJson']);
         Route::get('/export', [LogController::class, 'export']);
     });
 
     // ==== AD HEALTH / TARGETS ====
-    Route::get('/ad/health', [AdHealthController::class, 'health']);
-    Route::get('/ad/json-status', [AdHealthController::class, 'jsonStatus']);
-    Route::get('/ad-targets', [AdTargetController::class, 'index']);
+    Route::middleware('module.access:targets')->group(function () {
+        Route::get('/ad/health', [AdHealthController::class, 'health']);
+        Route::get('/ad/json-status', [AdHealthController::class, 'jsonStatus']);
+        Route::get('/ad-targets', [AdTargetController::class, 'index']);
+    });
 
     // ==== SETTINGS ====
-    Route::prefix('settings')->group(function () {
+    Route::prefix('settings')->middleware('module.access:settings')->group(function () {
         Route::get('/', [SettingController::class, 'index']);
         Route::post('/', [SettingController::class, 'store']);
     });
 
     // ==== SYSTEM SETTINGS ====
-    Route::prefix('system-settings')->group(function () {
+    Route::prefix('system-settings')->middleware('module.access:settings')->group(function () {
         Route::get('/', [SystemSettingController::class, 'index']);
         Route::post('/', [SystemSettingController::class, 'store']);
         Route::post('/test-connection', [SystemSettingController::class, 'testConnection']);
@@ -179,7 +193,7 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // Compatibilidade: endpoints com prefixo /api utilizados pelo Vue
-    Route::prefix('api/system-settings')->group(function () {
+    Route::prefix('api/system-settings')->middleware('module.access:settings')->group(function () {
         Route::get('/', [SystemSettingController::class, 'index']);
         Route::post('/', [SystemSettingController::class, 'store']);
         Route::post('/test-connection', [SystemSettingController::class, 'testConnection']);
@@ -189,13 +203,13 @@ Route::middleware(['auth', 'two_factor'])->prefix('api')->group(function () {
     });
 
     // Monitoramento de clientes (simples)
-    Route::prefix('client')->group(function () {
+    Route::prefix('client')->middleware('module.access:clients')->group(function () {
         Route::get('/stats', [ClientMonitorController::class, 'stats']);
         Route::get('/online', [ClientMonitorController::class, 'online']);
     });
 
     // Dashboard admin (protegido)
-    Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard']);
+    Route::get('/admin/clients', [ClientMonitorController::class, 'dashboard'])->middleware('module.access:clients');
 });
 
 Route::get('/clear-all', function () {
@@ -210,7 +224,7 @@ Route::get('/clear-all', function () {
         'success' => true,
         'message' => 'Caches limpos com sucesso.',
     ]);
-})->middleware(['auth', 'throttle:10,1'])->name('ops.clear-all');
+})->middleware(['auth', 'two_factor', 'module.access:settings', 'throttle:10,1'])->name('ops.clear-all');
 
 Route::get('/actualizar-json', function () {
     $user = auth()->user();
@@ -237,4 +251,4 @@ Route::get('/actualizar-json', function () {
             'message' => 'Não foi possível actualizar o ficheiro JSON.',
         ], 500);
     }
-})->middleware(['auth', 'two_factor', 'throttle:10,1'])->name('ops.actualizar-json');
+})->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:targets', 'throttle:10,1'])->name('ops.actualizar-json');

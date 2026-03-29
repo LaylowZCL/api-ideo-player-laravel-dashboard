@@ -154,6 +154,7 @@ class LoginController extends Controller
 
         $user = User::query()
             ->where('email', $login)
+            ->orWhere('username', $login)
             ->orWhere('name', $login)
             ->first();
 
@@ -169,6 +170,11 @@ class LoginController extends Controller
     {
         if (!config('two_factor.enabled')) {
             return null;
+        }
+
+        if ($user->requiresPasswordChange()) {
+            $request->session()->put('two_factor_passed', false);
+            return redirect()->route('force-password.edit');
         }
 
         $request->session()->put('two_factor_passed', false);

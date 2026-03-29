@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdGroupTarget;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\UserProvisioningService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -57,10 +59,12 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'username' => $user->username,
                 'user_type' => $user->user_type,
                 'role' => $user->roleName(),
                 'role_name' => $this->getRoleName($user->roleName()),
                 'permissions' => $user->permissionList(),
+                'must_change_password' => $user->requiresPasswordChange(),
                 'created_at' => $user->created_at->format('d/m/Y')
             ];
         });
@@ -84,7 +88,8 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'username' => 'required|string|max:255|unique:users,username',
+            'password' => 'nullable|string|min:8|confirmed',
             'role' => [
                 'required',
                 Rule::in(['user', 'manager', 'admin', 'super_admin']),
@@ -107,33 +112,40 @@ class UserController extends Controller
         }
 
         try {
-            $user = User::create([
+            $result = app(UserProvisioningService::class)->createUser([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'username' => $request->username,
+                'password' => $request->password,
                 'role' => $request->role,
                 'permissions' => $this->normalizePermissions($request->input('permissions', []), $request->role),
-            ]);
-            $user->syncLegacyRoleFields();
-            $user->save();
+            ], 'criação manual');
+            /** @var User $user */
+            $user = $result['user'];
 
             app(AuditLogService::class)->log('user.create', 'success', [
                 'user_id' => $user->id,
                 'email' => $user->email,
+                'username' => $user->username,
                 'role' => $user->roleName(),
+                'mail_sent' => $result['mail_sent'],
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Usuário criado com sucesso',
+                'message' => $result['mail_sent']
+                    ? 'Utilizador criado com sucesso e email enviado.'
+                    : 'Utilizador criado com sucesso, mas o email não foi enviado.',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'username' => $user->username,
                     'user_type' => $user->user_type,
                     'role' => $user->roleName(),
                     'role_name' => $this->getRoleName($user->roleName()),
                     'permissions' => $user->permissionList(),
+                    'must_change_password' => $user->requiresPasswordChange(),
                     'created_at' => $user->created_at->format('d/m/Y')
                 ]
             ]);
@@ -146,6 +158,93 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao criar usuário: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function storeFromAdTarget(Request $request)
+    {
+        if (!Gate::allows('isAdmin') && !Gate::allows('isManager')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não tem permissão para criar utilizadores a partir de alvos AD.'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'target_id' => 'required|exists:ad_group_targets,id',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'username' => 'required|string|max:255|unique:users,username',
+            'role' => ['required', Rule::in(['user', 'manager', 'admin', 'super_admin'])],
+            'permissions' => 'nullable|array',
+            'permissions.*' => ['string', Rule::in(User::MODULE_PERMISSIONS)],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro de validação',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $target = AdGroupTarget::findOrFail($request->integer('target_id'));
+
+        if (!$this->canAssignRole(auth()->user(), $request->role)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não tem permissão para atribuir este perfil.',
+            ], 403);
+        }
+
+        try {
+            $result = app(UserProvisioningService::class)->createUser([
+                'name' => $request->name,
+                'email' => $request->email,
+                'username' => $request->username,
+                'role' => $request->role,
+                'permissions' => $this->normalizePermissions($request->input('permissions', []), $request->role),
+            ], 'importação de alvo AD');
+            /** @var User $user */
+            $user = $result['user'];
+
+            app(AuditLogService::class)->log('user.create_from_ad_target', 'success', [
+                'user_id' => $user->id,
+                'target_id' => $target->id,
+                'email' => $user->email,
+                'username' => $user->username,
+                'mail_sent' => $result['mail_sent'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['mail_sent']
+                    ? 'Utilizador criado a partir do alvo AD e email enviado.'
+                    : 'Utilizador criado a partir do alvo AD, mas o email não foi enviado.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'username' => $user->username,
+                    'user_type' => $user->user_type,
+                    'role' => $user->roleName(),
+                    'role_name' => $this->getRoleName($user->roleName()),
+                    'permissions' => $user->permissionList(),
+                    'must_change_password' => $user->requiresPasswordChange(),
+                    'created_at' => $user->created_at->format('d/m/Y'),
+                ],
+            ]);
+        } catch (\Throwable $exception) {
+            app(AuditLogService::class)->log('user.create_from_ad_target', 'failed', [
+                'target_id' => $target->id,
+                'email' => $request->email,
+                'error' => $exception->getMessage(),
+            ], 'error');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao criar utilizador a partir do alvo AD: ' . $exception->getMessage(),
             ], 500);
         }
     }
@@ -184,6 +283,12 @@ class UserController extends Controller
                 'max:255',
                 Rule::unique('users')->ignore($user->id)
             ],
+            'username' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->ignore($user->id),
+            ],
             'password' => 'sometimes|string|min:8|confirmed',
             'role' => [
                 'sometimes',
@@ -220,9 +325,15 @@ class UserController extends Controller
             if ($request->has('email')) {
                 $user->email = $request->email;
             }
+
+            if ($request->has('username')) {
+                $user->username = $request->username;
+            }
             
             if ($request->has('password')) {
                 $user->password = Hash::make($request->password);
+                $user->must_change_password = !$isSelf;
+                $user->password_changed_at = $isSelf ? now() : null;
             }
             
             if ($request->has('role')) {
@@ -261,10 +372,12 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'username' => $user->username,
                     'user_type' => $user->user_type,
                     'role' => $user->roleName(),
                     'role_name' => $this->getRoleName($user->roleName()),
                     'permissions' => $user->permissionList(),
+                    'must_change_password' => $user->requiresPasswordChange(),
                     'created_at' => $user->created_at->format('d/m/Y')
                 ]
             ]);

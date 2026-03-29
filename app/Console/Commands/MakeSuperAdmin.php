@@ -39,6 +39,7 @@ class MakeSuperAdmin extends Command
                 'user_type' => 'super_admin',
                 'role' => 'super_admin',
                 'permissions' => User::MODULE_PERMISSIONS,
+                'username' => $user->username ?: strstr($email, '@', true),
             ]);
             $this->info("✓ Super admin role granted to existing user: {$email}");
             $this->info("  User ID: {$user->id}");
@@ -61,6 +62,7 @@ class MakeSuperAdmin extends Command
             $user = User::create([
                 'name' => $name,
                 'email' => $email,
+                'username' => strstr($email, '@', true),
                 'password' => Hash::make($password),
                 'user_type' => 'super_admin',
                 'role' => 'super_admin',

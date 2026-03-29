@@ -23,6 +23,7 @@ import AdminCampaignsPage from './components/AdminCampaignsPage.vue';
 import AdminLogsPage from './components/AdminLogsPage.vue';
 import ReportsPage from './components/ReportsPage.vue';
 import AdTargetsPage from './components/AdTargetsPage.vue';
+import ProfilePage from './components/ProfilePage.vue';
 
 // Create Vue app
 const app = createApp({});
@@ -45,6 +46,7 @@ app.component('admincampaignspage', AdminCampaignsPage);
 app.component('adminlogspage', AdminLogsPage);
 app.component('reportspage', ReportsPage);
 app.component('adtargetspage', AdTargetsPage);
+app.component('profilepage', ProfilePage);
 
 // Mount to your app element
 app.mount('#app');

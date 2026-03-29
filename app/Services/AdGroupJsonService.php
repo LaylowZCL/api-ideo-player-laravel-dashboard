@@ -8,7 +8,7 @@ class AdGroupJsonService
 {
     public function getTargetRecords(): array
     {
-        $path = $this->resolvePath(config('ad.group_json_path'));
+        $path = $this->getAdImportPath();
         if (!$path) {
             return [];
         }
@@ -91,7 +91,21 @@ class AdGroupJsonService
             return [];
         }
 
-        return $data;
+        return array_values(array_filter($data, function ($user) {
+            if (!is_array($user)) {
+                return false;
+            }
+
+            $identifier = $user['username'] ?? $user['login'] ?? $user['email'] ?? null;
+            $password = $user['password'] ?? null;
+
+            return !empty($identifier) && $password !== null;
+        }));
+    }
+
+    public function getAdImportPath(): ?string
+    {
+        return $this->resolvePath(config('ad.mock_users_path'));
     }
 
     public function normalizeTargetRecord(array $record): ?array

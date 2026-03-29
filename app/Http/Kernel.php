@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'client.auth' => \App\Http\Middleware\ClientAuthMiddleware::class,
         'internal.api' => \App\Http\Middleware\InternalApiAccess::class,
         'two_factor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
+        'module.access' => \App\Http\Middleware\EnsureModulePermission::class,
     ];
 }

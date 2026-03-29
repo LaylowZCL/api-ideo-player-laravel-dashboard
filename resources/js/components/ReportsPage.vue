@@ -86,22 +86,14 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label small text-muted">Destino do envio</label>
-            <select class="form-select" v-model="emailRecipientKey">
-              <option value="current_user">Meu email ({{ currentUser.email || 'indisponível' }})</option>
-              <option
-                v-for="group in emailGroups"
-                :key="`group-${group.id}`"
-                :value="`group:${group.id}`">
-                Grupo AD: {{ group.name }} ({{ group.email }})
-              </option>
-            </select>
+            <label class="form-label small text-muted">Email de destino</label>
+            <input type="email" class="form-control" v-model="recipientEmail" placeholder="destinatario@bancomoc.mz">
           </div>
-          <div class="col-md-4">
-            <label class="form-label small text-muted">Resumo do envio</label>
-            <div class="form-control bg-transparent d-flex align-items-center">
-              {{ selectedRecipientLabel }}
-            </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100" @click="exportAndEmail" :disabled="emailLoading">
+              <i class="bi bi-send me-1"></i>
+              {{ emailLoading ? 'A enviar...' : 'Enviar para este email' }}
+            </button>
           </div>
           <div class="col-12 d-flex gap-2">
             <button class="btn btn-primary" @click="applyFilters" :disabled="loading">
@@ -284,8 +276,7 @@ export default {
         email: '',
         name: ''
       },
-      emailGroups: [],
-      emailRecipientKey: 'current_user',
+      recipientEmail: '',
       pagination: {
         current_page: 1,
         last_page: 1,
@@ -324,34 +315,17 @@ export default {
     topVideos() {
       return this.stats.top_videos || [];
     },
-    selectedRecipientLabel() {
-      if (this.emailRecipientKey === 'current_user') {
-        return this.currentUser.email
-          ? `Envio para o utilizador actual: ${this.currentUser.email}`
-          : 'O utilizador actual não tem email configurado.';
-      }
-
-      const groupId = Number(this.emailRecipientKey.split(':')[1]);
-      const group = this.emailGroups.find(item => item.id === groupId);
-
-      return group
-        ? `Envio para o grupo AD ${group.name} (${group.email})`
-        : 'Seleccione um destinatário válido.';
-    }
+    
   },
   mounted() {
-    this.loadRecipients();
+    this.loadCurrentUser();
     this.refreshAll();
   },
   methods: {
-    async loadRecipients() {
-      const [userResponse, groupResponse] = await Promise.all([
-        this.$http.get('/api/current-user'),
-        this.$http.get('/api/ad-groups')
-      ]);
-
+    async loadCurrentUser() {
+      const userResponse = await this.$http.get('/api/current-user');
       this.currentUser = userResponse.data || { email: '', name: '' };
-      this.emailGroups = (groupResponse.data.groups || []).filter(group => !!group.email);
+      this.recipientEmail = this.currentUser.email || '';
     },
     buildQueryParams(includePaging = true) {
       return {
@@ -390,7 +364,7 @@ export default {
     },
     async fetchStats() {
       const params = this.buildQueryParams(false);
-      const response = await this.$http.get('/api/videos/report/stats', { params });
+      const response = await this.$http.get('/api/reports/stats', { params });
       if (response.data && response.data.success) {
         this.stats = response.data.stats || {};
       }
@@ -442,12 +416,14 @@ export default {
       this.emailLoading = true;
 
       try {
+        if (!this.recipientEmail) {
+          window.alert('Indique o email de destino.');
+          return;
+        }
+
         const payload = {
           ...this.buildQueryParams(false),
-          recipient_type: this.emailRecipientKey === 'current_user' ? 'current_user' : 'ad_group',
-          ad_group_id: this.emailRecipientKey.startsWith('group:')
-            ? Number(this.emailRecipientKey.split(':')[1])
-            : undefined
+          recipient_email: this.recipientEmail
         };
 
         const response = await this.$http.post('/api/reports/export-email', payload);

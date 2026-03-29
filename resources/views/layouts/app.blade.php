@@ -36,6 +36,7 @@
     </style>
 </head>
 <body class="bg-dark text-light">
+    @php($authUser = auth()->user())
     <div class="d-flex min-vh-100">
         <!-- Sidebar -->
         <div class="sidebar bg-dark border-end border-secondary" id="sidebar">
@@ -53,22 +54,30 @@
 
             <nav class="flex-fill p-3">
                 <div class="nav-menu">
-                    <a href="{{ route('dashboard') }}" class="nav-btn {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <i class="bi bi-display"></i>
-                        <span>Painel</span>
-                    </a>
-                    <a href="{{ route('schedule') }}" class="nav-btn {{ request()->routeIs('schedule.index') ? 'active' : '' }}">
-                        <i class="bi bi-calendar3"></i>
-                        <span>Agendamentos</span>
-                    </a>
-                    <a href="{{ route('videos') }}" class="nav-btn {{ request()->routeIs('videos') ? 'active' : '' }}">
-                        <i class="bi bi-camera-video"></i>
-                        <span>Vídeos</span>
-                    </a>
-                    <a href="{{ route('reports') }}" class="nav-btn {{ request()->routeIs('reports') ? 'active' : '' }}">
-                        <i class="bi bi-clipboard-data"></i>
-                        <span>Relatórios</span>
-                    </a>
+                    @if($authUser?->hasPermission('dashboard'))
+                        <a href="{{ route('dashboard') }}" class="nav-btn {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <i class="bi bi-display"></i>
+                            <span>Painel</span>
+                        </a>
+                    @endif
+                    @if($authUser?->hasPermission('schedules'))
+                        <a href="{{ route('schedule') }}" class="nav-btn {{ request()->routeIs('schedule') ? 'active' : '' }}">
+                            <i class="bi bi-calendar3"></i>
+                            <span>Agendamentos</span>
+                        </a>
+                    @endif
+                    @if($authUser?->hasPermission('videos'))
+                        <a href="{{ route('videos') }}" class="nav-btn {{ request()->routeIs('videos') ? 'active' : '' }}">
+                            <i class="bi bi-camera-video"></i>
+                            <span>Vídeos</span>
+                        </a>
+                    @endif
+                    @if($authUser?->hasPermission('reports'))
+                        <a href="{{ route('reports') }}" class="nav-btn {{ request()->routeIs('reports') ? 'active' : '' }}">
+                            <i class="bi bi-clipboard-data"></i>
+                            <span>Relatórios</span>
+                        </a>
+                    @endif
                     {{--
                     <a href="{{ route('preview') }}" class="nav-btn {{ request()->routeIs('preview') ? 'active' : '' }}">
                         <i class="bi bi-play-circle"></i>
@@ -79,35 +88,57 @@
                         <span>Logs</span>
                     </a>
                     --}}
-                    <a href="{{ route('users') }}" class="nav-btn {{ request()->routeIs('users') ? 'active' : '' }}">
-                        <i class="bi bi-activity"></i>
-                        <span>Utilizadores</span>
+                    <a href="{{ route('profile') }}" class="nav-btn {{ request()->routeIs('profile') ? 'active' : '' }}">
+                        <i class="bi bi-person-circle"></i>
+                        <span>Minha Conta</span>
                     </a>
-                    @can('isAdmin')
-                    <div class="mt-3 text-uppercase text-muted small" style="letter-spacing:0.08em;">
-                        Administração
-                    </div>
-                    <a href="{{ route('admin.groups') }}" class="nav-btn {{ request()->routeIs('admin.groups') ? 'active' : '' }}">
-                        <i class="bi bi-people"></i>
-                        <span>Grupos</span>
-                    </a>
-                    <a href="{{ route('admin.targets') }}" class="nav-btn {{ request()->routeIs('admin.targets') ? 'active' : '' }}">
-                        <i class="bi bi-diagram-3"></i>
-                        <span>Alvos AD</span>
-                    </a>
-                    <a href="{{ route('admin.clients') }}" class="nav-btn {{ request()->routeIs('admin.clients') ? 'active' : '' }}">
-                        <i class="bi bi-pc-display"></i>
-                        <span>Clientes</span>
-                    </a>
-                    <a href="{{ route('admin.campaigns') }}" class="nav-btn {{ request()->routeIs('admin.campaigns') ? 'active' : '' }}">
-                        <i class="bi bi-flag"></i>
-                        <span>Campanhas</span>
-                    </a>
-                    <a href="{{ route('admin.logs') }}" class="nav-btn {{ request()->routeIs('admin.logs') ? 'active' : '' }}">
-                        <i class="bi bi-clipboard-data"></i>
-                        <span>Logs</span>
-                    </a>
-                    @endcan
+                    @if($authUser?->hasPermission('users'))
+                        <a href="{{ route('users') }}" class="nav-btn {{ request()->routeIs('users') ? 'active' : '' }}">
+                            <i class="bi bi-activity"></i>
+                            <span>Utilizadores</span>
+                        </a>
+                    @endif
+                    @if($authUser?->isAdmin() && collect(['groups', 'targets', 'clients', 'campaigns', 'logs', 'settings'])->contains(fn($module) => $authUser->hasPermission($module)))
+                        <div class="mt-3 text-uppercase text-muted small" style="letter-spacing:0.08em;">
+                            Administração
+                        </div>
+                        @if($authUser->hasPermission('groups'))
+                            <a href="{{ route('admin.groups') }}" class="nav-btn {{ request()->routeIs('admin.groups') ? 'active' : '' }}">
+                                <i class="bi bi-people"></i>
+                                <span>Grupos</span>
+                            </a>
+                        @endif
+                        @if($authUser->hasPermission('targets'))
+                            <a href="{{ route('admin.targets') }}" class="nav-btn {{ request()->routeIs('admin.targets') ? 'active' : '' }}">
+                                <i class="bi bi-diagram-3"></i>
+                                <span>Alvos AD</span>
+                            </a>
+                        @endif
+                        @if($authUser->hasPermission('clients'))
+                            <a href="{{ route('admin.clients') }}" class="nav-btn {{ request()->routeIs('admin.clients') ? 'active' : '' }}">
+                                <i class="bi bi-pc-display"></i>
+                                <span>Clientes</span>
+                            </a>
+                        @endif
+                        @if($authUser->hasPermission('campaigns'))
+                            <a href="{{ route('admin.campaigns') }}" class="nav-btn {{ request()->routeIs('admin.campaigns') ? 'active' : '' }}">
+                                <i class="bi bi-flag"></i>
+                                <span>Campanhas</span>
+                            </a>
+                        @endif
+                        @if($authUser->hasPermission('logs'))
+                            <a href="{{ route('admin.logs') }}" class="nav-btn {{ request()->routeIs('admin.logs') ? 'active' : '' }}">
+                                <i class="bi bi-clipboard-data"></i>
+                                <span>Logs</span>
+                            </a>
+                        @endif
+                        @if($authUser->hasPermission('settings'))
+                            <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings') ? 'active' : '' }}">
+                                <i class="bi bi-gear"></i>
+                                <span>Configurações</span>
+                            </a>
+                        @endif
+                    @endif
                     {{--
                     <a href="{{ route('settings') }}" class="nav-btn {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                         <i class="bi bi-gear"></i>

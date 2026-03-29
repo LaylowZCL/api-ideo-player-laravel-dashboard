@@ -24,14 +24,14 @@ class VideoReportsExportMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Relatório detalhado de vídeos'
+            subject: 'Banco de Moçambique - Relatório detalhado de vídeos'
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.reports.video-export'
+            view: 'emails.reports.video-export'
         );
     }
 

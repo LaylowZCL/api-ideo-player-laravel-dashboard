@@ -17,13 +17,12 @@ class ImportAdGroupJson extends Command
 
     public function handle(): int
     {
-        $path = $this->option('path') ?: config('ad.group_json_path');
         /** @var AdGroupJsonService $jsonService */
         $jsonService = app(AdGroupJsonService::class);
-        $resolvedPath = $this->resolveInputPath($path);
+        $resolvedPath = $jsonService->getAdImportPath();
 
         if (!$resolvedPath || !is_file($resolvedPath)) {
-            $this->error('Arquivo JSON não encontrado: ' . ($path ?: 'null'));
+            $this->error('Arquivo JSON AD não encontrado em mock-users.json.');
             return self::FAILURE;
         }
 
@@ -53,6 +52,7 @@ class ImportAdGroupJson extends Command
 
         $createdClients = 0;
         $updatedClients = 0;
+        $groupNames = [];
 
         foreach ($byMachine as $machine => $groups) {
             $client = Client::firstOrCreate(
@@ -68,6 +68,7 @@ class ImportAdGroupJson extends Command
 
             $groupIds = [];
             foreach (array_unique($groups) as $groupName) {
+                $groupNames[] = $groupName;
                 $group = AdGroup::firstOrCreate(
                     ['name' => $groupName],
                     ['source' => 'ad', 'active' => true]
@@ -107,6 +108,8 @@ class ImportAdGroupJson extends Command
         $this->info('Importação concluída.');
         $this->line('Clientes criados: ' . $createdClients);
         $this->line('Clientes atualizados: ' . $updatedClients);
+        $this->line('Grupos processados: ' . count(array_unique($groupNames)));
+        $this->line('Alvos processados: ' . count($targets));
 
         $status = [
             'last_import_at' => now()->toDateTimeString(),
@@ -114,6 +117,8 @@ class ImportAdGroupJson extends Command
             'records' => count($raw),
             'clients_created' => $createdClients,
             'clients_updated' => $updatedClients,
+            'groups_processed' => count(array_unique($groupNames)),
+            'targets_processed' => count($targets),
         ];
         Storage::disk('local')->put('AD/import-status.json', json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
@@ -133,26 +138,4 @@ class ImportAdGroupJson extends Command
         }
     }
 
-    private function resolveInputPath(?string $path): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        if (is_file($path)) {
-            return $path;
-        }
-
-        $basePath = base_path($path);
-        if (is_file($basePath)) {
-            return $basePath;
-        }
-
-        $storagePath = storage_path(ltrim($path, '/'));
-        if (is_file($storagePath)) {
-            return $storagePath;
-        }
-
-        return null;
-    }
 }

@@ -309,7 +309,7 @@ export default {
         // Popup
         popupWidth: 960,
         popupHeight: 540,
-        popupPosition: "center"
+        popupPosition: "bottom_right"
       },
       confirmMessage: '',
       confirmCallback: null,
@@ -332,6 +332,7 @@ export default {
         const response = await axios.get('/api/system-settings');
         if (response.data.success) {
           this.settings = response.data.settings;
+          this.settings.popupPosition = this.settings.popupPosition || 'bottom_right';
           this.showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
         }
       } catch (error) {

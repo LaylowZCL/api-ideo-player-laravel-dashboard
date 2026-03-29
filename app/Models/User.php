@@ -20,7 +20,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
+        'must_change_password',
+        'password_changed_at',
         'user_type',
         'role',
         'permissions',
@@ -49,6 +52,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'must_change_password' => 'boolean',
+        'password_changed_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
         'permissions' => 'array',
     ];
@@ -70,6 +75,11 @@ class User extends Authenticatable
     public function hasTwoFactorEnabled(): bool
     {
         return !empty($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
+    }
+
+    public function requiresPasswordChange(): bool
+    {
+        return (bool) $this->must_change_password;
     }
 
     /**

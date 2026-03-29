@@ -176,6 +176,8 @@ class DashboardController extends Controller
                     ];
                 })->toArray();
 
+            $systemSettings = SystemSetting::getCurrentSettings();
+
             return response()->json([
                 'success' => true,
                 'stats' => $stats,
@@ -185,11 +187,11 @@ class DashboardController extends Controller
                 'recentLogs' => $recentLogs,
                 'upcomingSchedules' => $upcomingSchedules,
                 'recentReports' => $recentReports,
-                'popupSettings' => SystemSetting::getCurrentSettings()->only([
-                    'popup_width',
-                    'popup_height',
-                    'popup_position'
-                ]),
+                'popupSettings' => [
+                    'popup_width' => $systemSettings->popup_width,
+                    'popup_height' => $systemSettings->popup_height,
+                    'popup_position' => SystemSetting::normalizePopupPosition($systemSettings->popup_position),
+                ],
                 'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
 

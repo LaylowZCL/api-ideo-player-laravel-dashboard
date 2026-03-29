@@ -149,11 +149,11 @@
             <div class="col-md-4">
               <label class="form-label small text-muted">Posição</label>
               <select class="form-select" v-model="popupSettings.position">
+                <option value="bottom_right">Inferior direito</option>
                 <option value="center">Centro</option>
                 <option value="top_left">Superior esquerdo</option>
                 <option value="top_right">Superior direito</option>
                 <option value="bottom_left">Inferior esquerdo</option>
-                <option value="bottom_right">Inferior direito</option>
               </select>
             </div>
           </div>
@@ -545,7 +545,7 @@ data() {
     popupSettings: {
       width: 960,
       height: 540,
-      position: 'center',
+      position: 'bottom_right',
       preset: 'custom'
     },
     systemSettingsPayload: null,
@@ -608,7 +608,7 @@ mounted() {
         this.popupSettings = {
           width: response.data.settings.popupWidth || 960,
           height: response.data.settings.popupHeight || 540,
-          position: response.data.settings.popupPosition || 'center',
+          position: response.data.settings.popupPosition || 'bottom_right',
           preset: this.matchResolutionPreset(
             response.data.settings.popupWidth || 960,
             response.data.settings.popupHeight || 540

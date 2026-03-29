@@ -9,6 +9,16 @@ class SystemSetting extends Model
 {
     use HasFactory;
 
+    public const DEFAULT_POPUP_POSITION = 'bottom_right';
+
+    public const VALID_POPUP_POSITIONS = [
+        'center',
+        'top_left',
+        'top_right',
+        'bottom_left',
+        'bottom_right',
+    ];
+
     protected $fillable = [
         // Configurações de API
         'api_endpoint',
@@ -72,7 +82,7 @@ class SystemSetting extends Model
         'enable_auto_update' => true,
         'popup_width' => 960,
         'popup_height' => 540,
-        'popup_position' => 'center',
+        'popup_position' => self::DEFAULT_POPUP_POSITION,
     ];
 
     public static function getCurrentSettings()
@@ -85,8 +95,20 @@ class SystemSetting extends Model
             ]);
         }
 
+        $shouldPersist = false;
+
         if (!$settings->api_endpoint) {
             $settings->api_endpoint = config('services.video_api.endpoint');
+            $shouldPersist = true;
+        }
+
+        $normalizedPopupPosition = self::normalizePopupPosition($settings->popup_position);
+        if ($settings->popup_position !== $normalizedPopupPosition) {
+            $settings->popup_position = $normalizedPopupPosition;
+            $shouldPersist = true;
+        }
+
+        if ($shouldPersist) {
             $settings->save();
         }
         
@@ -124,7 +146,7 @@ class SystemSetting extends Model
             'enableAutoUpdate' => $this->enable_auto_update,
             'popupWidth' => $this->popup_width,
             'popupHeight' => $this->popup_height,
-            'popupPosition' => $this->popup_position,
+            'popupPosition' => self::normalizePopupPosition($this->popup_position),
         ];
     }
 
@@ -154,7 +176,18 @@ class SystemSetting extends Model
             'enable_auto_update' => $vueData['enableAutoUpdate'] ?? true,
             'popup_width' => $vueData['popupWidth'] ?? 960,
             'popup_height' => $vueData['popupHeight'] ?? 540,
-            'popup_position' => $vueData['popupPosition'] ?? 'center',
+            'popup_position' => self::normalizePopupPosition($vueData['popupPosition'] ?? self::DEFAULT_POPUP_POSITION),
         ];
+    }
+
+    public static function normalizePopupPosition($value): string
+    {
+        $normalized = is_string($value)
+            ? strtolower(trim($value))
+            : '';
+
+        return in_array($normalized, self::VALID_POPUP_POSITIONS, true)
+            ? $normalized
+            : self::DEFAULT_POPUP_POSITION;
     }
 }

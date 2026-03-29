@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Exports\VideoReportsExport;
 use App\Mail\VideoReportsExportMail;
-use App\Models\AdGroup;
 use App\Models\VideoReport;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
@@ -102,10 +101,7 @@ class VideoReportController extends Controller
             'event_type' => 'nullable|string|max:50',
             'completed' => 'nullable|boolean',
             'group_by' => 'nullable|in:day,week,month',
-            'recipient_type' => 'required|in:current_user,ad_group',
-            'ad_group_id' => 'nullable|required_if:recipient_type,ad_group|integer|exists:ad_groups,id',
-        ], [
-            'ad_group_id.required_if' => 'Seleccione um grupo AD para o envio por email.',
+            'recipient_email' => 'required|email|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -117,14 +113,8 @@ class VideoReportController extends Controller
         }
 
         $data = $validator->validated();
-        [$recipientEmail, $recipientLabel] = $this->resolveEmailRecipient($request, $data);
-
-        if (!$recipientEmail) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Não foi encontrado um email válido para o destinatário seleccionado.',
-            ], 422);
-        }
+        $recipientEmail = $data['recipient_email'];
+        $recipientLabel = $recipientEmail;
 
         $payload = $this->buildExportPayload($data, $request->user()?->name);
         $filename = 'exports/relatorios-video-' . now()->format('Ymd_His') . '.xlsx';
@@ -140,7 +130,6 @@ class VideoReportController extends Controller
 
         app(AuditLogService::class)->log('reports.email_export', 'success', [
             'filters' => $data,
-            'recipient_type' => $data['recipient_type'],
             'recipient_email' => $recipientEmail,
             'rows' => count($payload['detailed_rows']),
         ]);
@@ -358,19 +347,6 @@ class VideoReportController extends Controller
             'timeline_rows' => $timelineRows,
             'top_video_rows' => $topVideoRows,
         ];
-    }
-
-    private function resolveEmailRecipient(Request $request, array $data): array
-    {
-        if ($data['recipient_type'] === 'current_user') {
-            $user = $request->user();
-
-            return [$user?->email, $user?->email ?? 'utilizador actual'];
-        }
-
-        $group = AdGroup::find($data['ad_group_id']);
-
-        return [$group?->email, $group?->email ?? ($group?->name ?? 'grupo AD')];
     }
 
     private function mapReportForApi(VideoReport $report): array

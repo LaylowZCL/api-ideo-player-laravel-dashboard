@@ -21,9 +21,24 @@ class EnsureTwoFactorVerified
             return $next($request);
         }
 
+        if ($request->routeIs('force-password.*')) {
+            return $next($request);
+        }
+
         $user = $request->user();
         if (!$user) {
             return $next($request);
+        }
+
+        if ($user->requiresPasswordChange()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Password change required',
+                    'code' => 'password_change_required',
+                ], 403);
+            }
+
+            return redirect()->route('force-password.edit');
         }
 
         if (config('two_factor.required') && empty($user->two_factor_secret)) {

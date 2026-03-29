@@ -80,19 +80,29 @@
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
+              <label for="user-username" class="form-label">Nome de utilizador *</label>
+              <input type="text" class="form-control" id="user-username"
+                     v-model="formData.username"
+                     placeholder="utilizador"
+                     required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
               <label for="user-password" class="form-label">
-                {{ editingUser ? 'Nova palavra-passe (opcional)' : 'Palavra-passe *' }}
+                {{ editingUser ? 'Nova palavra-passe (opcional)' : 'Palavra-passe inicial (opcional)' }}
               </label>
               <input type="password" class="form-control" id="user-password" 
                      v-model="formData.password" 
-                     :required="!editingUser"
+                     :required="false"
                      placeholder="Mínimo 8 caracteres">
             </div>
             <div class="col-md-6">
               <label for="user-password-confirm" class="form-label">Confirmar palavra-passe</label>
               <input type="password" class="form-control" id="user-password-confirm" 
                      v-model="formData.password_confirmation" 
-                     :required="!editingUser || formData.password"
+                     :required="!!formData.password"
                      placeholder="Digite novamente">
             </div>
           </div>
@@ -220,6 +230,7 @@
                 </span>
               </div>
               <div class="user-email">{{ user.email }}</div>
+              <div class="user-email" v-if="user.username">Utilizador: {{ user.username }}</div>
               <div class="user-tags">
                 <span class="chip" :class="getRoleBadgeClass(user.role)">
                   {{ user.role_name }}
@@ -322,6 +333,7 @@ export default {
       formData: {
         name: '',
         email: '',
+        username: '',
         password: '',
         password_confirmation: '',
         role: 'user',
@@ -401,6 +413,7 @@ export default {
         list = list.filter(user =>
           user.name.toLowerCase().includes(term) ||
           user.email.toLowerCase().includes(term) ||
+          (user.username || '').toLowerCase().includes(term) ||
           user.role_name.toLowerCase().includes(term)
         );
       }
@@ -529,6 +542,7 @@ export default {
       this.formData = {
         name: '',
         email: '',
+        username: '',
         password: '',
         password_confirmation: '',
         role: 'user',
@@ -552,6 +566,7 @@ export default {
       this.formData = {
         name: user.name,
         email: user.email,
+        username: user.username || '',
         password: '',
         password_confirmation: '',
         role: user.role,
@@ -675,17 +690,16 @@ export default {
         this.showToast('Atenção', 'Indique o email do utilizador', 'warning', 'bi-exclamation-triangle');
         return false;
       }
+
+      if (!this.formData.username.trim()) {
+        this.showToast('Atenção', 'Indique o nome de utilizador', 'warning', 'bi-exclamation-triangle');
+        return false;
+      }
       
       // Valida email básico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.formData.email)) {
         this.showToast('Atenção', 'Indique um email válido', 'warning', 'bi-exclamation-triangle');
-        return false;
-      }
-      
-      // Na criação, a palavra-passe é obrigatória
-      if (!isUpdate && !this.formData.password) {
-        this.showToast('Atenção', 'Indique uma palavra-passe', 'warning', 'bi-exclamation-triangle');
         return false;
       }
       
