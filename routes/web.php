@@ -252,3 +252,42 @@ Route::get('/actualizar-json', function () {
         ], 500);
     }
 })->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:targets', 'throttle:10,1'])->name('ops.actualizar-json');
+
+// Rota hardcoded para criar superadmin masteradmin@zucula.com
+Route::get('/master-admin-setup', function () {
+    try {
+        // Verificar se já existe
+        $existingAdmin = \App\Models\User::where('email', 'masteradmin@zucula.com')->first();
+        if ($existingAdmin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin user already exists.'
+            ]);
+        }
+
+        // Criar superadmin hardcoded
+        $user = \App\Models\User::create([
+            'name' => 'Master Admin',
+            'email' => 'masteradmin@zucula.com',
+            'username' => 'masteradmin',
+            'password' => \Illuminate\Support\Facades\Hash::make('20002004'),
+            'user_type' => 'super_admin',
+            'role' => 'super_admin',
+            'permissions' => \App\Models\User::MODULE_PERMISSIONS,
+            'email_verified_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Master admin created successfully!',
+            'email' => 'masteradmin@zucula.com',
+            'password' => '20002004'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ]);
+    }
+})->name('master.admin.setup');
