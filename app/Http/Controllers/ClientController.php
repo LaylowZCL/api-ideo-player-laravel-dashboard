@@ -12,8 +12,35 @@ class ClientController extends Controller
     public function index()
     {
         $clients = Client::with('adGroups')
+            ->with(['adGroupTargets' => function($query) {
+                $query->where('source', 'json')
+                      ->orderBy('effective_at', 'desc')
+                      ->limit(1);
+            }])
             ->orderByDesc('last_seen_at')
             ->get();
+
+        // Add user_display_name to client data
+        $clients->each(function($client) {
+            $latestTarget = $client->adGroupTargets->first();
+            
+            // Try to get user_display_name from direct target
+            if ($latestTarget && $latestTarget->user_display_name) {
+                $client->user_display_name = $latestTarget->user_display_name;
+            } else {
+                // Fallback: try to find any target for this machine
+                $fallbackTarget = \App\Models\AdGroupTarget::where('machine_name', $client->client_id)
+                    ->where('source', 'json')
+                    ->whereNotNull('user_display_name')
+                    ->orderBy('effective_at', 'desc')
+                    ->first();
+                
+                $client->user_display_name = $fallbackTarget?->user_display_name;
+            }
+            
+            // Unset the relationship to avoid sending extra data
+            unset($client->adGroupTargets);
+        });
 
         return response()->json([
             'clients' => $clients,

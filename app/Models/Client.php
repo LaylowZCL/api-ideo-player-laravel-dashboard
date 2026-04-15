@@ -34,4 +34,9 @@ class Client extends Model
     {
         return $this->belongsToMany(Schedule::class, 'schedule_client');
     }
+
+    public function adGroupTargets()
+    {
+        return $this->hasMany(AdGroupTarget::class);
+    }
 }

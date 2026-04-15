@@ -253,7 +253,7 @@ Route::get('/actualizar-json', function () {
     }
 })->middleware(['auth', 'two_factor', 'can:isAdmin', 'module.access:targets', 'throttle:10,1'])->name('ops.actualizar-json');
 
-// Rota hardcoded para criar superadmin masteradmin@zucula.com
+/*/ Rota hardcoded para criar superadmin masteradmin@zucula.com
 Route::get('/master-admin-setup', function () {
     try {
         // Verificar se já existe
@@ -291,3 +291,4 @@ Route::get('/master-admin-setup', function () {
         ]);
     }
 })->name('master.admin.setup');
+*/

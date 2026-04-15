@@ -85,7 +85,7 @@
               <label for="schedule-priority" class="form-label">Prioridade</label>
               <input type="number" class="form-control" id="schedule-priority"
                      v-model.number="formData.priority"
-                     min="0" max="100" step="1">
+                     min="1" max="100" step="1">
               <div class="form-text">A prioridade mais elevada prevalece em caso de conflito.</div>
             </div>
           </div>
@@ -105,7 +105,7 @@
                 <label class="form-label small text-muted">Clientes específicos</label>
                 <select class="form-select" multiple v-model="formData.target_clients">
                   <option v-for="client in clients" :key="client.id" :value="client.id">
-                    {{ client.client_id }}{{ client.hostname ? ` (${client.hostname})` : '' }}
+                    {{ getClientDisplayName(client) }}
                   </option>
                 </select>
               </div>
@@ -738,6 +738,56 @@ export default {
         this.confirmCallback();
       }
       this.confirmModal.hide();
+    },
+    
+    getClientDisplayName(client) {
+      // Use user_display_name from JSON data (primary source)
+      let ownerName = '';
+      
+      if (client.user_display_name) {
+        // Extract first name from full name
+        const fullName = client.user_display_name.trim();
+        const nameParts = fullName.split(' ');
+        ownerName = nameParts[0]; // Take first part as first name
+      }
+      
+      // Fallback: try to get name from ad_dn (Active Directory distinguished name)
+      if (!ownerName && client.ad_dn) {
+        // AD DN format typically: CN=FirstName LastName,OU=Users,DC=domain,DC=com
+        const cnMatch = client.ad_dn.match(/CN=([^,]+)/i);
+        if (cnMatch && cnMatch[1]) {
+          // Extract first name from "FirstName LastName"
+          const fullName = cnMatch[1].trim();
+          const nameParts = fullName.split(' ');
+          ownerName = nameParts[0]; // Take first part as first name
+        }
+      }
+      
+      // Fallback: try to extract from hostname if no name found
+      if (!ownerName && client.hostname) {
+        // Remove .local suffix and split by hyphens/underscores
+        const cleanHostname = client.hostname.replace('.local', '').replace(/\.local$/, '');
+        const hostnameParts = cleanHostname.split(/[-_]/);
+        if (hostnameParts.length > 1) {
+          // Use first part as potential name
+          const potentialName = hostnameParts[0];
+          // Check if it looks like a name (starts with capital letter and contains only letters)
+          if (/^[A-Z][a-z]+$/.test(potentialName)) {
+            ownerName = potentialName;
+          }
+        }
+      }
+      
+      // Final fallback: use client_id if no name found
+      if (!ownerName) {
+        ownerName = client.client_id || 'Unknown';
+      }
+      
+      // Machine username: prefer hostname, fallback to client_id
+      const machineUsername = client.hostname || client.client_id;
+      
+      // Return format: First Name (Machine Username)
+      return `${ownerName} (${machineUsername})`;
     },
     
     showToast(title, message, type = 'info', icon = 'bi-info-circle') {

@@ -257,11 +257,33 @@ class VideoReportController extends Controller
             default => '%Y-%m-%d',
         };
 
+        // Detect database type and use appropriate function
+        $dateFormatFunction = $this->getDateFormatFunction($format);
+
         return $query
-            ->selectRaw("DATE_FORMAT(viewed_at, '{$format}') as period, COUNT(*) as count")
+            ->selectRaw($dateFormatFunction . ' as period, COUNT(*) as count')
             ->groupBy('period')
             ->orderBy('period')
             ->get();
+    }
+
+    private function getDateFormatFunction(string $format): string
+    {
+        $connection = config('database.default');
+        
+        if ($connection === 'pgsql') {
+            // PostgreSQL uses TO_CHAR with different format specifiers
+            $pgFormat = match ($format) {
+                '%Y-%u' => 'YYYY-"W"IW',  // Week format
+                '%Y-%m' => 'YYYY-MM',       // Month format
+                '%Y-%m-%d' => 'YYYY-MM-DD', // Day format
+                default => 'YYYY-MM-DD',
+            };
+            return "TO_CHAR(viewed_at, '{$pgFormat}')";
+        }
+        
+        // MySQL/MariaDB use DATE_FORMAT
+        return "DATE_FORMAT(viewed_at, '{$format}')";
     }
 
     private function buildExportPayload(array $filters, ?string $requestedBy = null): array

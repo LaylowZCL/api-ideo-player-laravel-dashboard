@@ -322,7 +322,7 @@
                 <label for="videoFile" class="form-label">Arquivo de Vídeo *</label>
                 <input type="file" class="form-control" id="videoFile" @change="handleFileUpload" accept="video/mp4,video/avi,video/mov,video/wmv,video/webm,video/x-matroska" required>
                 <div class="form-text">
-                  Formatos suportados: MP4, AVI, MOV, WMV. Tamanho máximo: 100MB
+                  Formatos suportados: MP4, AVI, MOV, WMV. Tamanho máximo: 200MB
                 </div>
               </div>
 
@@ -901,9 +901,9 @@ mounted() {
       return;
     }
 
-    // Validação do tamanho do arquivo (100MB)
-    if (this.uploadData.file.size > 100 * 1024 * 1024) {
-      this.showToast('Erro', 'O arquivo deve ter no máximo 100MB', 'error');
+    // Validação do tamanho do arquivo (200MB)
+    if (this.uploadData.file.size > 200 * 1024 * 1024) {
+      this.showToast('Erro', 'O arquivo deve ter no máximo 200MB', 'error');
       return;
     }
 
