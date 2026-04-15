@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Painel de controlo - ZK Interactive')
+@section('title', 'Painel de controlo - Banco de Moc')
 
 @section('content')
     <div>

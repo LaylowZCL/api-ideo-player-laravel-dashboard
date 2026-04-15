@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pré-visualização - ZK Interactive')
+@section('title', 'Pré-visualização - Banco de Moc')
 
 @section('content')
     <div id="previews-section" class="content-section">
@@ -9,5 +9,5 @@
 @endsection
 
 @section('scripts')
-@vite(['resources/js/app.js'])
+    @vite(['resources/js/app.js'])
 @endsection

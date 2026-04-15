@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Registos - ZK Interactive')
+@section('title', 'Registos - Banco de Moc')
 
 @section('content')
     <div id="logs-section" class="content-section">
