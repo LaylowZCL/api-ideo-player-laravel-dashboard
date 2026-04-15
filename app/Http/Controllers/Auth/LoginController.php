@@ -126,9 +126,7 @@ class LoginController extends Controller
         }
 
         if (config('ad.allow_local_fallback')) {
-            $result = $this->guard()->attempt(
-                $this->credentials($request), $request->filled('remember')
-            );
+            $result = $this->attemptLocalLogin($request);
             app(AuditLogService::class)->log('auth.login', $result ? 'success' : 'failed', [
                 'auth_source' => 'local',
                 'login' => $login,

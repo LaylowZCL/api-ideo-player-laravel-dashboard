@@ -48,9 +48,9 @@
         </div>
       </div>
       <div class="col-lg-5">
-        <div class="card h-100">
+          <div class="card h-100">
           <div class="card-header">
-            <h5 class="card-title mb-0">Ficheiro AD (`mock-users.json`)</h5>
+            <h5 class="card-title mb-0">Ficheiro AD (`{{ jsonStatus.filename || 'não configurado' }}`)</h5>
           </div>
           <div class="card-body">
             <div class="small text-muted">Arquivo</div>
@@ -127,6 +127,7 @@
           <table class="table table-hover mb-0">
             <thead>
               <tr>
+                <th style="width: 72px;">#</th>
                 <th>Máquina</th>
                 <th>Utilizador</th>
                 <th>Nome</th>
@@ -137,7 +138,8 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="target in targets" :key="target.id" class="target-row" @click="openCreateUserModal(target)">
+              <tr v-for="(target, index) in targets" :key="target.id" class="target-row" @click="openCreateUserModal(target)">
+                <td class="text-muted">{{ rowNumber(index) }}</td>
                 <td class="fw-medium">{{ target.machine_name }}</td>
                 <td>{{ target.user_name || '-' }}</td>
                 <td>{{ target.user_display_name || '-' }}</td>
@@ -147,7 +149,7 @@
                 <td><span class="badge bg-secondary">{{ target.source }}</span></td>
               </tr>
               <tr v-if="targets.length === 0">
-                <td colspan="7" class="text-center text-muted py-4">Nenhum registo encontrado.</td>
+                <td colspan="8" class="text-center text-muted py-4">Nenhum registo encontrado.</td>
               </tr>
             </tbody>
           </table>
@@ -430,6 +432,9 @@ export default {
       if (page < 1 || page > this.pagination.last_page) return;
       this.pagination.current_page = page;
       await this.loadTargets();
+    },
+    rowNumber(index) {
+      return ((this.pagination.current_page - 1) * this.filters.perPage) + index + 1;
     }
   }
 };

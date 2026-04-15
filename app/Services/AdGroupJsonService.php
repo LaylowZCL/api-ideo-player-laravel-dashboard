@@ -6,6 +6,19 @@ use Illuminate\Support\Facades\Log;
 
 class AdGroupJsonService
 {
+    public function getAdImportCandidates(): array
+    {
+        return array_values(array_unique(array_filter([
+            config('ad.group_json_path'),
+            config('ad.mock_users_path'),
+            storage_path('app/ad/mock-users.json'),
+            storage_path('app/AD/mock-users.json'),
+            storage_path('app/ad-groups.json'),
+            storage_path('app/ad/ad-groups.json'),
+            storage_path('app/AD/ad-groups.json'),
+        ])));
+    }
+
     public function getTargetRecords(): array
     {
         $path = $this->getAdImportPath();
@@ -105,7 +118,25 @@ class AdGroupJsonService
 
     public function getAdImportPath(): ?string
     {
-        return $this->resolvePath(config('ad.mock_users_path'));
+        foreach ($this->getAdImportCandidates() as $candidate) {
+            $resolved = $this->resolvePath($candidate);
+            if ($resolved) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
+    public function getExpectedAdImportPath(): ?string
+    {
+        foreach ($this->getAdImportCandidates() as $candidate) {
+            if ($candidate) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     public function normalizeTargetRecord(array $record): ?array

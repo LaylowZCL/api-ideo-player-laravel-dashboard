@@ -233,12 +233,21 @@ Route::get('/actualizar-json', function () {
     }
 
     try {
-        \Illuminate\Support\Facades\Artisan::call('ad:import-json');
+        $exitCode = \Illuminate\Support\Facades\Artisan::call('ad:import-json');
+        $output = trim(\Illuminate\Support\Facades\Artisan::output());
+
+        if ($exitCode !== 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível actualizar o ficheiro JSON.',
+                'output' => $output,
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Ficheiro JSON importado com sucesso.',
-            'output' => trim(\Illuminate\Support\Facades\Artisan::output()),
+            'output' => $output,
         ]);
     } catch (\Throwable $exception) {
         \Illuminate\Support\Facades\Log::error('Falha ao actualizar JSON AD via rota manual.', [

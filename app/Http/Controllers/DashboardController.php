@@ -8,6 +8,7 @@ use App\Models\Log;
 use App\Models\VideoReport;
 use App\Models\SystemSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -328,15 +329,16 @@ class DashboardController extends Controller
      */
     private function getPlatformDistribution()
     {
-        return VideoReport::selectRaw('platform, COUNT(*) as count')
-            ->whereNotNull('platform')
-            ->groupBy('platform')
+        $platformExpression = "COALESCE(NULLIF(platform, ''), 'unknown')";
+
+        return VideoReport::selectRaw("{$platformExpression} as platform, COUNT(*) as count")
+            ->groupBy(DB::raw($platformExpression))
             ->orderBy('count', 'desc')
             ->take(5)
             ->get()
             ->map(function($item) {
                 return [
-                    'platform' => $item->platform ?: 'Desconhecido',
+                    'platform' => $item->platform ?: 'unknown',
                     'count' => $item->count
                 ];
             })->toArray();

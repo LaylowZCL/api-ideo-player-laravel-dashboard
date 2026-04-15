@@ -45,6 +45,7 @@
       <table class="table table-dark table-hover align-middle">
         <thead>
           <tr>
+            <th style="width: 72px;">#</th>
             <th>Nome</th>
             <th>DN</th>
             <th>Email</th>
@@ -54,7 +55,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="group in filteredGroups" :key="group.id">
+          <tr v-for="(group, index) in filteredGroups" :key="group.id">
+            <td class="text-muted">{{ index + 1 }}</td>
             <td class="fw-semibold">{{ group.name }}</td>
             <td class="text-muted">{{ group.dn || '-' }}</td>
             <td class="text-white">{{ group.email || '-' }}</td>
@@ -78,7 +80,7 @@
             </td>
           </tr>
           <tr v-if="filteredGroups.length === 0">
-            <td colspan="6" class="text-center text-muted py-4">Nenhum grupo encontrado.</td>
+            <td colspan="7" class="text-center text-muted py-4">Nenhum grupo encontrado.</td>
           </tr>
         </tbody>
       </table>

@@ -8,6 +8,7 @@ use App\Models\VideoReport;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
@@ -210,6 +211,8 @@ class VideoReportController extends Controller
     {
         $query = $this->baseQuery($filters);
         $groupBy = $filters['group_by'] ?? 'day';
+        $platformExpression = $this->platformGroupExpression();
+        $topVideoTitleExpression = $this->topVideoTitleExpression();
 
         $stats = [
             'total_reports' => $query->count(),
@@ -219,8 +222,8 @@ class VideoReportController extends Controller
             'completion_rate' => 0,
             'avg_duration' => round((float) ((clone $query)->whereNotNull('playback_duration')->avg('playback_duration') ?? 0), 2),
             'by_platform' => (clone $query)
-                ->selectRaw('COALESCE(platform, "unknown") as platform, COUNT(*) as count')
-                ->groupBy('platform')
+                ->selectRaw("{$platformExpression} as platform, COUNT(*) as count")
+                ->groupBy(DB::raw($platformExpression))
                 ->pluck('count', 'platform'),
             'event_breakdown' => (clone $query)
                 ->selectRaw('event_type, COUNT(*) as count')
@@ -228,8 +231,8 @@ class VideoReportController extends Controller
                 ->orderByDesc('count')
                 ->pluck('count', 'event_type'),
             'top_videos' => (clone $query)
-                ->selectRaw('video_id, COALESCE(video_title, CONCAT("Vídeo ", video_id)) as video_title, COUNT(*) as count')
-                ->groupBy('video_id', 'video_title')
+                ->selectRaw("video_id, {$topVideoTitleExpression} as video_title, COUNT(*) as count")
+                ->groupBy('video_id', DB::raw($topVideoTitleExpression))
                 ->orderByDesc('count')
                 ->limit(8)
                 ->get(),
@@ -269,7 +272,7 @@ class VideoReportController extends Controller
 
     private function getDateFormatFunction(string $format): string
     {
-        $connection = config('database.default');
+        $connection = DB::connection()->getDriverName();
         
         if ($connection === 'pgsql') {
             // PostgreSQL uses TO_CHAR with different format specifiers
@@ -284,6 +287,20 @@ class VideoReportController extends Controller
         
         // MySQL/MariaDB use DATE_FORMAT
         return "DATE_FORMAT(viewed_at, '{$format}')";
+    }
+
+    private function platformGroupExpression(): string
+    {
+        return "COALESCE(NULLIF(platform, ''), 'unknown')";
+    }
+
+    private function topVideoTitleExpression(): string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return "COALESCE(video_title, 'Vídeo ' || COALESCE(video_id::text, 'sem-id'))";
+        }
+
+        return "COALESCE(video_title, CONCAT('Vídeo ', COALESCE(video_id, 'sem-id')))";
     }
 
     private function buildExportPayload(array $filters, ?string $requestedBy = null): array

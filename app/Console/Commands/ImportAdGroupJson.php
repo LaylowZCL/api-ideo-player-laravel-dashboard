@@ -20,9 +20,11 @@ class ImportAdGroupJson extends Command
         /** @var AdGroupJsonService $jsonService */
         $jsonService = app(AdGroupJsonService::class);
         $resolvedPath = $jsonService->getAdImportPath();
+        $expectedPath = $jsonService->getExpectedAdImportPath();
+        $expectedFile = $expectedPath ? basename($expectedPath) : 'ficheiro configurado';
 
         if (!$resolvedPath || !is_file($resolvedPath)) {
-            $this->error('Arquivo JSON AD não encontrado em mock-users.json.');
+            $this->error("Arquivo JSON AD não encontrado em {$expectedFile}.");
             return self::FAILURE;
         }
 

@@ -32,6 +32,15 @@ class AdHealthController extends Controller
         /** @var AdGroupJsonService $jsonService */
         $jsonService = app(AdGroupJsonService::class);
         $path = $jsonService->getAdImportPath();
+        $statusPath = storage_path('app/AD/import-status.json');
+        $lastImport = null;
+        $importStatus = [];
+        if (is_file($statusPath)) {
+            $importStatus = json_decode(file_get_contents($statusPath), true) ?: [];
+            $lastImport = $importStatus['last_import_at'] ?? null;
+        }
+
+        $path = $path ?: ($importStatus['source_path'] ?? $jsonService->getExpectedAdImportPath());
         $exists = $path && is_file($path);
         $entries = 0;
         $lastModified = null;
@@ -41,17 +50,10 @@ class AdHealthController extends Controller
             $lastModified = date('Y-m-d H:i:s', filemtime($path));
         }
 
-        $statusPath = storage_path('app/AD/import-status.json');
-        $lastImport = null;
-        $importStatus = [];
-        if (is_file($statusPath)) {
-            $importStatus = json_decode(file_get_contents($statusPath), true) ?: [];
-            $lastImport = $importStatus['last_import_at'] ?? null;
-        }
-
         return response()->json([
             'success' => $exists,
             'path' => $path,
+            'filename' => $path ? basename($path) : null,
             'exists' => $exists,
             'entries' => $entries,
             'last_modified' => $lastModified,
