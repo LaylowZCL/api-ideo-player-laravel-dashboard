@@ -6,7 +6,7 @@
 <main class="container py-4">
   <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Ficha Técnica</h1>
-  <p class="text-secondary">Documento técnico da solução BM Video Schedule Manager (Dashboard + API + integração com cliente desktop).</p>
+  <p class="text-secondary">Resumo técnico e funcional da solução BM Video Schedule Manager.</p>
 
   <section class="doc-section">
     <h2>1. Identificação da solução</h2>
@@ -99,7 +99,7 @@
           <tr><th style="width:35%">TLS/HTTPS obrigatório</th><td>Sim (obrigatório em produção)</td></tr>
           <tr><th>Autenticação web</th><td>Laravel Auth (sessão e credenciais de utilizador)</td></tr>
           <tr><th>Autenticação técnica API (cliente desktop)</th><td><code>X-API-Key</code> + <code>X-Client-ID</code> validados em middleware dedicado</td></tr>
-          <tr><th>Gestão de perfis e permissões</th><td>Campos <code>user_type</code> e <code>is_admin</code> para controlo de acesso</td></tr>
+          <tr><th>Gestão de perfis e permissões</th><td>Perfis e permissões definidos por utilizador conforme regras da aplicação</td></tr>
           <tr><th>Auditoria de acções</th><td>Registos em logs de aplicação e eventos de reprodução (<code>video_reports</code>)</td></tr>
           <tr><th>Política de rotação de chaves</th><td>A definir (recomendado: trimestral ou em incidente)</td></tr>
           <tr><th>Norma/compliance aplicável</th><td>A confirmar conforme política interna do cliente</td></tr>
@@ -114,8 +114,8 @@
       <table class="table table-bordered align-middle">
         <tbody>
           <tr><th style="width:35%">Módulos operacionais</th><td>Dashboard, Vídeos, Agendamentos, Utilizadores, Logs, Preview, Configurações</td></tr>
-          <tr><th>Endpoints públicos essenciais</th><td><code>GET /api/health</code></td></tr>
-          <tr><th>Endpoints técnicos (cliente desktop)</th><td><code>/api/schedules/clients</code>, <code>/api/scheduled/videos</code>, <code>/api/videos/report</code>, <code>/api/ping</code></td></tr>
+          <tr><th>Documentação oficial</th><td><code>/docs</code> e respetivas páginas internas</td></tr>
+          <tr><th>Integração técnica</th><td>Realizada pela API e pelos serviços internos da solução, conforme configuração operacional</td></tr>
           <tr><th>SLA (disponibilidade)</th><td>A definir com operação/negócio</td></tr>
           <tr><th>Janela de manutenção</th><td>A definir</td></tr>
           <tr><th>Canal de suporte N1</th><td>A definir</td></tr>

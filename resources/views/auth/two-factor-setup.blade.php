@@ -11,6 +11,7 @@
                     @csrf
                     <button class="w-100 btn btn-lg btn-outline-danger" type="submit">Desativar 2FA</button>
                 </form>
+                @include('auth.partials.docs-link')
             </div>
         @else
             <form method="POST" action="{{ route('two-factor.enable') }}">
@@ -50,6 +51,7 @@
                 </div>
 
                 <button class="w-100 btn btn-lg btn-primary mt-3" type="submit">Ativar 2FA</button>
+                @include('auth.partials.docs-link')
             </form>
         @endif
     </main>

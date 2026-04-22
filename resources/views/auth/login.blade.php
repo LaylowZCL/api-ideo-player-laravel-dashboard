@@ -53,8 +53,7 @@
                     Autenticação local do painel com email ou nome de utilizador
                 </p>
             @endif
-            <p class="mt-5 mb-3 text-muted" style="color: #ba9a69 !important;">&copy; Banco de Moçambique
-                {{ date('Y') }}</p>
+            @include('auth.partials.docs-link')
         </form>
     </main>
 @endsection

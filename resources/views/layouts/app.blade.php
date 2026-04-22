@@ -187,11 +187,19 @@
         </div>
 
         <!-- Main Content -->
-        <main class="flex-fill p-4 overflow-auto">
-
-            <div id="app">  <!-- Must match mount selector -->
-                @yield('content')
+        <main class="flex-fill d-flex flex-column min-vh-100">
+            <div class="flex-fill p-4 overflow-auto">
+                <div id="app">  <!-- Must match mount selector -->
+                    @yield('content')
+                </div>
             </div>
+
+            <footer class="border-top border-secondary px-4 py-3 text-center text-muted" style="background: rgba(0, 0, 0, 0.25);">
+                <div>&copy; Banco de Moçambique {{ date('Y') }}</div>
+                <div class="mt-1">
+                    <a href="{{ route('docs.index') }}" class="link-warning text-decoration-none">Consultar documentação</a>
+                </div>
+            </footer>
         </main>
     </div>
 

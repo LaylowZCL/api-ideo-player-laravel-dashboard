@@ -5,111 +5,100 @@
 @section('content')
 <main class="container py-4">
   <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
-  <h1 class="h3">Manual Descritivo da Solução Mista de Disponibilização de Vídeos</h1>
-  <p class="text-secondary">Versão 1.2</p>
+  <h1 class="h3">Manual da Solução Mista de Disponibilização de Vídeos</h1>
+  <p class="text-secondary">Visão funcional e operacional da solução composta por Dashboard Web, API e Aplicação Desktop.</p>
 
   <section class="doc-section">
-    <h2>1. Objectivo e âmbito</h2>
-    <p>Esta solução integra Dashboard/API (Laravel) e Aplicação Desktop para distribuição e reprodução de vídeos em múltiplos postos de trabalho.</p>
-    {{-- <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows, macOS e Linux.</p> --}}
-    <p>Foi concebida para operar em escala elevada, suportando mais de 50 000 utilizadores em ambientes Windows e macOS.</p>
+    <h2>1. O que é esta solução</h2>
+    <p>A solução foi concebida para permitir a gestão centralizada de conteúdos de vídeo e respetivos agendamentos, com distribuição controlada para clientes finais. Em termos práticos, a equipa gestora administra vídeos e regras de execução no dashboard, enquanto os clientes desktop consomem essas instruções e reproduzem os conteúdos conforme definido.</p>
   </section>
 
   <section class="doc-section">
-    <h2>2. Arquitectura de referência</h2>
+    <h2>2. Componentes principais</h2>
     <ul>
-      <li><strong>Camada de gestão:</strong> Dashboard Web para operação e administração.</li>
-      <li><strong>Camada de serviços:</strong> API para autenticação, agenda e telemetria.</li>
-      <li><strong>Camada de execução:</strong> Aplicação Desktop em clientes finais.</li>
-      <li><strong>Armazenamento:</strong> base de dados relacional e directoria de vídeos.</li>
+      <li><strong>Dashboard Web:</strong> interface de gestão para utilizadores operacionais e administrativos.</li>
+      <li><strong>API:</strong> camada responsável por autenticação técnica, leitura de agendamentos, telemetria e integração.</li>
+      <li><strong>Aplicação Desktop:</strong> cliente que executa os conteúdos nos postos finais.</li>
+      <li><strong>Base de dados e armazenamento:</strong> sustentam a persistência das regras, registos e conteúdos associados.</li>
     </ul>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/dashboard.png') }}" alt="Vista geral do dashboard">
-      <figcaption>Painel principal de operação e monitorização.</figcaption>
+      <img src="{{ asset('docs-assets/images/dashboard/painel-de-controle.png') }}" alt="Visão geral do dashboard">
+      <figcaption>O dashboard web funciona como ponto central de operação da solução.</figcaption>
     </figure>
   </section>
 
   <section class="doc-section">
-    <h2>3. Decisão operacional de autenticação</h2>
-    <p>A aplicação desktop utiliza autenticação hardcoded para reduzir assistência técnica de login em centenas de instalações.</p>
+    <h2>3. Como os componentes interagem</h2>
+    <ol>
+      <li>Os utilizadores autenticados entram no dashboard e configuram vídeos, utilizadores, agendamentos e outros parâmetros.</li>
+      <li>A informação fica registada na base de dados e disponibilizada pela API.</li>
+      <li>A aplicação desktop consulta a API para obter instruções operacionais e reporta eventos de execução.</li>
+      <li>O dashboard mostra relatórios, indicadores e logs para acompanhamento contínuo da operação.</li>
+    </ol>
+    <p>Este modelo permite separar claramente a gestão central da execução local.</p>
+  </section>
+
+  <section class="doc-section">
+    <h2>4. Perfis de utilização</h2>
     <ul>
-      <li>Sem autenticação interactiva por utilizador final.</li>
-      <li>Credenciais técnicas embebidas no binário.</li>
-      <li>Rotação de credenciais requer novo build e redistribuição.</li>
+      <li><strong>Operador:</strong> acompanha e executa tarefas operacionais do dia a dia, conforme permissões atribuídas.</li>
+      <li><strong>Gestor:</strong> supervisiona conteúdos, agendamentos e algumas áreas administrativas.</li>
+      <li><strong>Administrador:</strong> possui acesso ampliado à gestão de utilizadores, configurações e áreas sensíveis.</li>
     </ul>
+    <p>O que cada utilizador vê no sistema depende diretamente do seu perfil e das permissões atribuídas.</p>
   </section>
 
   <section class="doc-section">
-    <h2>4. Instalação resumida</h2>
-    <h3>4.1 API + Dashboard (servidor)</h3>
+    <h2>5. Fluxo operacional típico</h2>
     <ol>
-      <li>Instalar PHP, MySQL e servidor web compatíveis com Laravel.</li>
-      <li>Configurar <code>.env</code> com base de dados, URL da aplicação e credenciais de API.</li>
-      <li>Executar migrações: <code>php artisan migrate</code>.</li>
-      <li>Garantir escrita em <code>storage/</code> e <code>bootstrap/cache</code>.</li>
-    </ol>
-    <h3>4.2 Aplicação Desktop (postos)</h3>
-    <ol>
-      <li>Confirmar domínio final da API (ex.: <code>https://dominiodaapi.com</code>).</li>
-      <li>Actualizar <code>BASE_URL</code> hardcoded para <code>https://dominiodaapi.com/api</code>.</li>
-      {{-- <li>Compilar por sistema operativo (macOS, Windows, Linux).</li> --}}
-      <li>Compilar por sistema operativo (macOS, Windows).</li>
-      <li>Instalar aplicação com pacote gerado para cada plataforma.</li>
-    </ol>
-  </section>
-
-  <section class="doc-section">
-    <h2>5. Operação diária</h2>
-    <ol>
-      <li>Publicar/actualizar vídeos no Dashboard.</li>
-      <li>Criar ou rever agendamentos activos.</li>
-      <li>Executar sincronização e confirmar estado da API.</li>
-      <li>Monitorizar relatórios de reprodução e erros.</li>
+      <li>Entrar no dashboard com credenciais válidas.</li>
+      <li>Carregar ou atualizar vídeos disponíveis.</li>
+      <li>Criar ou rever agendamentos ativos.</li>
+      <li>Validar entidades complementares, como clientes, grupos, campanhas e alvos AD, quando aplicável.</li>
+      <li>Acompanhar relatórios e logs para garantir que a execução ocorreu como previsto.</li>
     </ol>
     <figure class="doc-figure">
-      <img src="{{ asset('documentacao/assets/images/dashboard/gerenciamento-de-videos.png') }}" alt="Gestão de vídeos">
-      <figcaption>Gestão e sincronização de vídeos no Dashboard.</figcaption>
+      <img src="{{ asset('docs-assets/images/dashboard/carregamento-de-video.png') }}" alt="Gestão operacional de conteúdos">
+      <figcaption>A gestão de conteúdos e agendamentos acontece de forma centralizada no dashboard.</figcaption>
     </figure>
   </section>
 
   <section class="doc-section">
-    <h2>6. Publicação da documentação</h2>
-    <p>A documentação integral deve estar servida pela API em:</p>
+    <h2>6. Aplicação Desktop</h2>
+    <p>A aplicação desktop é a componente responsável por executar os vídeos nos postos finais. Ao contrário do dashboard, ela não é operada com login tradicional por utilizador final. A comunicação com a API segue um modelo técnico controlado, definido pela organização.</p>
     <ul>
-      <li><code>https://dominiodaapi.com/documentacao</code></li>
-      <li><code>https://dominiodaapi.com/documentacao/*</code></li>
-    </ul>
-    <p>Isto inclui o manual da app desktop (Electron).</p>
-  </section>
-
-  <section class="doc-section">
-    <h2>7. Boas práticas para escala (50 000+ utilizadores)</h2>
-    <ul>
-      <li>Distribuir a API por múltiplas instâncias atrás de balanceador.</li>
-      <li>Separar base de dados de escrita e leitura quando aplicável.</li>
-      <li>Utilizar cache para respostas frequentes de agenda e metadados.</li>
-      <li>Aplicar monitorização central de latência, erros e saúde de clientes.</li>
-      <li>Definir janelas de manutenção e política de rollback.</li>
+      <li>Recebe instruções e horários a partir da API.</li>
+      <li>Executa os conteúdos conforme o agendamento configurado.</li>
+      <li>Envia eventos de operação para acompanhamento e auditoria.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>8. Segurança e conformidade</h2>
+    <h2>7. Segurança e governação</h2>
     <ul>
-      <li>Forçar HTTPS/TLS entre clientes e API.</li>
-      <li>Rodar chaves de API periodicamente.</li>
-      <li>Restringir permissões por perfil (Administrador, Manager, Operador).</li>
-      <li>Guardar logs de auditoria de criação, edição e eliminação.</li>
+      <li>O acesso ao dashboard depende de autenticação e permissões.</li>
+      <li>A API deve operar com HTTPS e controlos de autenticação técnica adequados.</li>
+      <li>As ações relevantes devem poder ser acompanhadas por logs e relatórios.</li>
+      <li>Perfis e permissões devem ser atribuídos segundo o princípio do menor privilégio necessário.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>9. Manuais específicos</h2>
+    <h2>8. Onde consultar cada tema</h2>
     <ul>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-api']) }}">Manual de Utilização da API</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-dashboard-web']) }}">Manual de Utilização do Dashboard Web</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'manual-aplicacao-desktop']) }}">Manual de Utilização da Aplicação Desktop</a></li>
-      <li><a href="{{ route('docs.page', ['slug' => 'ficha-tecnica']) }}">Ficha Técnica</a></li>
+      <li><a href="{{ route('docs.page', ['slug' => 'manual-dashboard-web']) }}">Manual de Utilização do Dashboard Web</a> para a operação diária da plataforma.</li>
+      <li><a href="{{ route('docs.page', ['slug' => 'manual-api']) }}">Manual de Utilização da API</a> para contexto técnico e integração.</li>
+      <li><a href="{{ route('docs.page', ['slug' => 'manual-aplicacao-desktop']) }}">Manual de Utilização da Aplicação Desktop</a> para instalação e uso do cliente final.</li>
+      <li><a href="{{ route('docs.page', ['slug' => 'ficha-tecnica']) }}">Ficha Técnica</a> para a visão resumida da solução.</li>
+    </ul>
+  </section>
+
+  <section class="doc-section">
+    <h2>9. URL oficial da documentação</h2>
+    <p>A documentação oficial desta aplicação deve ser disponibilizada no caminho:</p>
+    <ul class="mb-0">
+      <li><code>/docs</code></li>
+      <li><code>/docs/&lt;manual&gt;</code></li>
     </ul>
   </section>
 </main>

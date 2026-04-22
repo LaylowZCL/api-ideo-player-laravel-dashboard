@@ -26,13 +26,20 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::view('/documentacao', 'documentacao.index')->name('documentacao.index');
-Route::view('/documentacao/index', 'documentacao.index')->name('documentacao.index.page');
-Route::view('/documentacao/manual-solucao-mista', 'documentacao.manuais.manual-solucao-mista')->name('documentacao.manual-solucao-mista');
-Route::view('/documentacao/manual-api', 'documentacao.manuais.manual-api')->name('documentacao.manual-api');
-Route::view('/documentacao/manual-dashboard-web', 'documentacao.manuais.manual-dashboard-web')->name('documentacao.manual-dashboard-web');
-Route::view('/documentacao/manual-app-electron', 'documentacao.manuais.manual-app-electron')->name('documentacao.manual-app-electron');
-Route::view('/documentacao/ficha-tecnica', 'documentacao.manuais.ficha-tecnica')->name('documentacao.ficha-tecnica');
+$docsPages = [
+    'manual-solucao-mista' => 'docs.manuais.manual-solucao-mista',
+    'manual-api' => 'docs.manuais.manual-api',
+    'manual-dashboard-web' => 'docs.manuais.manual-dashboard-web',
+    'manual-aplicacao-desktop' => 'docs.manuais.manual-app-electron',
+    'ficha-tecnica' => 'docs.manuais.ficha-tecnica',
+];
+
+Route::view('/docs', 'docs.index')->name('docs.index');
+Route::get('/docs/{slug}', function (string $slug) use ($docsPages) {
+    abort_unless(array_key_exists($slug, $docsPages), 404);
+
+    return view($docsPages[$slug]);
+})->name('docs.page');
 
 if (config('ad.dashboard_uses_ad')) {
     Auth::routes([

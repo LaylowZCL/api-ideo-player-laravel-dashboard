@@ -6,76 +6,70 @@
 <main class="container py-4">
   <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Manual de Utilização da API</h1>
+  <p class="text-secondary">Referência funcional da API que suporta o dashboard web e a aplicação desktop.</p>
 
   <section class="doc-section">
-    <h2>1. Pré-requisitos de instalação</h2>
+    <h2>1. Papel da API na solução</h2>
+    <p>A API é a camada que centraliza a comunicação entre os componentes da plataforma. Ela fornece dados ao dashboard, recebe pedidos do cliente desktop e mantém o fluxo de operação da solução.</p>
+  </section>
+
+  <section class="doc-section">
+    <h2>2. O que a API suporta</h2>
     <ul>
-      {{-- <li>Servidor Linux recomendado (Ubuntu LTS ou equivalente).</li> --}}
-      <li>Servidor compatível com PHP/Laravel e HTTPS obrigatório.</li>
-      <li>PHP e extensões compatíveis com a versão Laravel em uso.</li>
-      <li>MySQL/MariaDB com backups automáticos.</li>
-      <li>Servidor web (Nginx/Apache) com HTTPS obrigatório.</li>
+      <li>autenticação e acesso aos serviços internos da solução;</li>
+      <li>consulta de vídeos, agendamentos e dados operacionais;</li>
+      <li>receção de relatórios e eventos provenientes dos clientes desktop;</li>
+      <li>exposição de informação necessária à execução dos conteúdos.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>2. Instalação base</h2>
+    <h2>3. Requisitos gerais</h2>
+    <ul>
+      <li>Servidor compatível com Laravel e PHP em versão suportada.</li>
+      <li>Base de dados relacional corretamente configurada.</li>
+      <li>Servidor web configurado com HTTPS em produção.</li>
+      <li>Permissões de escrita válidas para pastas de cache e logs.</li>
+    </ul>
+  </section>
+
+  <section class="doc-section">
+    <h2>4. Configuração inicial</h2>
     <ol>
-      <li>Configurar variáveis em <code>.env</code> (DB, APP_URL, chaves).</li>
-      <li>Executar migrações: <code>php artisan migrate</code>.</li>
-      <li>Garantir permissões de escrita em <code>storage</code> e <code>bootstrap/cache</code>.</li>
-      <li>Activar supervisor para filas agendadas, se aplicável.</li>
+      <li>Definir as variáveis de ambiente no ficheiro <code>.env</code>.</li>
+      <li>Configurar ligação à base de dados, URL da aplicação, email e parâmetros técnicos necessários.</li>
+      <li>Executar as migrações e validar o acesso à base.</li>
+      <li>Confirmar que a aplicação responde corretamente em ambiente local ou produtivo.</li>
     </ol>
   </section>
 
   <section class="doc-section">
-    <h2>3. Modelo de autenticação de clientes Electron</h2>
-    <p>A aplicação desktop autentica-se por credenciais técnicas hardcoded (sem login de utilizador final).</p>
+    <h2>5. Integração com a aplicação desktop</h2>
+    <p>A aplicação desktop usa a API para consultar dados de operação e enviar eventos. Essa interação é técnica e faz parte do funcionamento interno da solução.</p>
     <ul>
-      <li>Credenciais transportadas por cabeçalhos técnicos (API key e client ID).</li>
-      <li>Validação no middleware da API.</li>
-      <li>Rotação de credenciais implica novo build e redeploy dos clientes.</li>
+      <li>O cliente desktop consulta a API para saber quais conteúdos executar e em que condições.</li>
+      <li>A API devolve os dados necessários para essa execução.</li>
+      <li>Após a execução, o cliente pode reportar eventos para telemetria, relatórios e auditoria.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>4. Endpoints críticos</h2>
+    <h2>6. Boas práticas operacionais</h2>
     <ul>
-      <li><code>GET /api/client/schedules</code> - horários activos por cliente.</li>
-      <li><code>GET /api/client/videos/next</code> - próximo vídeo elegível.</li>
-      <li><code>POST /api/videos/report</code> - eventos de reprodução.</li>
-      <li><code>GET /api/client/ping</code> - heartbeat do cliente.</li>
-    </ul>
-    <p>Todos os endpoints devem ser protegidos por autenticação e limitação de taxa.</p>
-  </section>
-
-  <section class="doc-section">
-    <h2>5. Publicação da documentação da solução</h2>
-    <p>Todo o manual deve estar publicado no domínio da API:</p>
-    <ul>
-      <li><code>https://dominiodaapi.com/documentacao</code></li>
-      <li><code>https://dominiodaapi.com/documentacao/*</code></li>
-    </ul>
-    <p>Inclui também o manual da app desktop.</p>
-  </section>
-
-  <section class="doc-section">
-    <h2>6. Escalabilidade para 50 000+ utilizadores</h2>
-    <ul>
-      <li>Colocar a API atrás de balanceador com múltiplas instâncias.</li>
-      <li>Aplicar cache em leituras de agenda e metadados.</li>
-      <li>Separar tráfego interno e externo por rede/controlos.</li>
-      <li>Usar observabilidade centralizada: logs, métricas e alertas.</li>
+      <li>Utilizar HTTPS em produção sem exceção.</li>
+      <li>Restringir o acesso aos endpoints técnicos aos clientes autorizados.</li>
+      <li>Monitorizar falhas de autenticação, erros de execução e degradação de desempenho.</li>
+      <li>Garantir backups regulares da base de dados e capacidade de restauro.</li>
+      <li>Manter logs e auditoria disponíveis para análise de incidentes.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>7. Segurança e continuidade</h2>
-    <ul>
-      <li>Rotação periódica de chaves de API.</li>
-      <li>Backups diários da base de dados com testes de restauro.</li>
-      <li>Plano de contingência para indisponibilidade de rede/API.</li>
-      <li>Registo de auditoria para acções administrativas.</li>
+    <h2>7. Publicação da documentação</h2>
+    <p>A documentação oficial desta solução deve ser publicada e mantida sob o caminho:</p>
+    <ul class="mb-0">
+      <li><code>/docs</code></li>
+      <li><code>/docs/&lt;manual&gt;</code></li>
     </ul>
   </section>
 </main>

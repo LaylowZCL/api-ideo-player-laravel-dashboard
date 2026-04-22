@@ -6,87 +6,76 @@
 <main class="container py-4">
   <a href="{{ route('docs.index') }}" class="btn btn-outline-primary btn-sm mb-3">Voltar ao índice</a>
   <h1 class="h3">Manual de Utilização da Aplicação Desktop</h1>
+  <p class="text-secondary">Orientações gerais para instalação, operação e validação do cliente desktop da solução.</p>
 
   <section class="doc-section">
-    <h2>1. Plataformas suportadas</h2>
-    <ul>
-      <li><strong>Windows 10/11</strong> (x64).</li>
-      <li><strong>macOS</strong> (Intel/Apple Silicon).</li>
-      {{-- <li><strong>Linux</strong> (x64, com ambiente gráfico compatível).</li> --}}
-    </ul>
+    <h2>1. O que é a aplicação desktop</h2>
+    <p>A aplicação desktop é o componente instalado nos postos finais para reproduzir os conteúdos geridos centralmente no dashboard. Ela funciona como cliente operacional da solução e depende da API para obter instruções e reportar eventos.</p>
   </section>
 
   <section class="doc-section">
-    <h2>2. Modelo de autenticação (hardcoded)</h2>
-    <p>Por decisão operacional, a aplicação desktop utiliza autenticação hardcoded para acesso à API.</p>
+    <h2>2. Plataformas suportadas</h2>
     <ul>
-      <li>Não há fluxo de login por utilizador final na app desktop.</li>
-      <li>As credenciais técnicas (API key e client ID) ficam embebidas no build.</li>
-      <li>Este modelo reduz suporte de campo em instalações de grande volume.</li>
+      <li><strong>Windows</strong></li>
+      <li><strong>macOS</strong></li>
     </ul>
-    <p><strong>Nota:</strong> a rotação de credenciais exige novo build e redistribuição.</p>
+    <p>Os pacotes de instalação devem ser gerados especificamente para cada sistema operativo suportado.</p>
   </section>
 
   <section class="doc-section">
-    <h2>3. Regra obrigatória antes de compilar</h2>
-    <p><strong>A compilação só deve ocorrer depois de ser conhecido o domínio final da API.</strong></p>
+    <h2>3. Funcionamento geral</h2>
     <ol>
-      <li>Definir o domínio final (ex.: <code>https://dominiodaapi.com</code>).</li>
-      <li>Actualizar o valor hardcoded de <code>BASE_URL</code> para <code>https://dominiodaapi.com/api</code>.</li>
-      <li>Validar endpoint de saúde/autenticação.</li>
-      <li>Compilar os binários por sistema operativo.</li>
+      <li>A aplicação inicia no posto final.</li>
+      <li>Consulta a API para obter a configuração necessária.</li>
+      <li>Identifica o conteúdo a executar com base nas regras definidas centralmente.</li>
+      <li>Executa os vídeos e envia informação operacional para a plataforma.</li>
     </ol>
   </section>
 
   <section class="doc-section">
-    <h2>4. Compilação e deploy por sistema operativo</h2>
-    <p>O projecto possui três manifestos de empacotamento:</p>
+    <h2>4. Antes de instalar ou compilar</h2>
     <ul>
-      <li><code>package.json</code> - build principal para macOS.</li>
-      <li><code>WIN_package.json</code> - build específico para Windows.</li>
-      {{-- <li><code>LNX_package.json</code> - build específico para Linux.</li> --}}
-    </ul>
-    <p>Antes de compilar cada alvo, copiar o manifesto respectivo para <code>package.json</code> e executar o build.</p>
-    <p>Exemplo operacional:</p>
-    <ul>
-      <li>Windows: usar configuração de <code>WIN_package.json</code> e gerar <code>.exe/.msi</code>.</li>
-      {{-- <li>Linux: usar configuração de <code>LNX_package.json</code> e gerar <code>.AppImage/.deb</code>.</li> --}}
-      <li>macOS: manter <code>package.json</code> principal e gerar <code>.dmg/.zip</code>.</li>
+      <li>Confirmar o endereço final da API que será utilizado.</li>
+      <li>Garantir que o ambiente de destino consegue comunicar com a API.</li>
+      <li>Validar que a configuração técnica do cliente aponta para o domínio correto.</li>
+      <li>Assegurar que o pacote foi preparado para o sistema operativo certo.</li>
     </ul>
   </section>
 
   <section class="doc-section">
-    <h2>5. Instalação por sistema operativo</h2>
+    <h2>5. Instalação</h2>
     <h3>5.1 Windows</h3>
     <ol>
-      <li>Executar instalador assinado (<code>.exe</code> ou <code>.msi</code>).</li>
-      <li>Concluir assistente e validar arranque automático, se aplicável.</li>
+      <li>Executar o instalador fornecido para Windows.</li>
+      <li>Seguir o assistente até ao final.</li>
+      <li>Concluir a instalação e validar a primeira execução.</li>
     </ol>
+
     <h3>5.2 macOS</h3>
     <ol>
-      <li>Abrir pacote <code>.dmg</code> e mover a app para Applications.</li>
-      <li>Conceder permissões na primeira execução.</li>
+      <li>Abrir o pacote disponibilizado para macOS.</li>
+      <li>Mover a aplicação para a pasta adequada.</li>
+      <li>Autorizar a primeira execução, se o sistema solicitar.</li>
     </ol>
-    {{-- <h3>5.3 Linux</h3>
-    <ol>
-      <li>Instalar pacote <code>.AppImage</code>, <code>.deb</code> ou equivalente.</li>
-      <li>Garantir permissões de execução e codecs necessários.</li>
-    </ol> --}}
   </section>
 
   <section class="doc-section">
-    <h2>6. Validação pós-instalação</h2>
+    <h2>6. Validação após instalação</h2>
     <ol>
-      <li>Confirmar autenticação com a API.</li>
-      <li>Confirmar leitura de horários activos.</li>
-      <li>Confirmar envio de eventos para <code>/api/videos/report</code>.</li>
+      <li>Confirmar que a aplicação abre corretamente.</li>
+      <li>Verificar se consegue comunicar com a API.</li>
+      <li>Validar se os conteúdos esperados são carregados.</li>
+      <li>Confirmar se os eventos são refletidos no lado do dashboard ou relatórios.</li>
     </ol>
-    <p>Nome oficial da aplicação: <strong>Banco Moc Popup Video</strong>.</p>
   </section>
 
   <section class="doc-section">
-    <h2>7. Manual oficial de manutenção</h2>
-    <p>Manter documentação técnica detalhada no repositório Electron: <code>docs/manual-utilizacao-app-electron.md</code>.</p>
+    <h2>7. Situações comuns a verificar</h2>
+    <ul>
+      <li><strong>A aplicação não recebe conteúdos:</strong> validar conectividade com a API e configuração do cliente.</li>
+      <li><strong>Conteúdos não reproduzem:</strong> verificar se existem agendamentos ativos e conteúdos disponíveis.</li>
+      <li><strong>Informação não aparece no dashboard:</strong> confirmar se os eventos estão a ser enviados corretamente.</li>
+    </ul>
   </section>
 </main>
 @endsection

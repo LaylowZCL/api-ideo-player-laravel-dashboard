@@ -28,7 +28,7 @@
             </div>
 
             <button class="w-100 btn btn-lg btn-primary" type="submit">Guardar e continuar</button>
-            <p class="mt-4 mb-0 text-muted" style="color: #ba9a69 !important;">&copy; Banco de Moçambique {{ date('Y') }}</p>
+            @include('auth.partials.docs-link')
         </form>
     </main>
 @endsection

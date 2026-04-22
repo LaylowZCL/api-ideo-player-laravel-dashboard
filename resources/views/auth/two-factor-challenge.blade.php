@@ -34,6 +34,7 @@
             </div>
 
             <button class="w-100 btn btn-lg btn-primary mt-3" type="submit">Continuar</button>
+            @include('auth.partials.docs-link')
         </form>
     </main>
 @endsection
